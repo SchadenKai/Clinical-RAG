@@ -2,10 +2,11 @@
 # create agent object
 # create nodes
 # routing function if necessary
-from langgraph.graph import StateGraph
 from langgraph.checkpoint.memory import InMemorySaver
-from .state import AgentState
+from langgraph.graph import StateGraph
+
 from .nodes import call_llm_node, validate_input_node
+from .state import AgentState
 
 graph = StateGraph(state_schema=AgentState)
 

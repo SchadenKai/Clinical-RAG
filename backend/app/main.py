@@ -1,5 +1,7 @@
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
+
 from app.core.config import settings
 from app.routes.v1.main import v1_router
 

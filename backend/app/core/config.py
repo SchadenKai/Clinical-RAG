@@ -1,7 +1,8 @@
-from typing import Optional
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from dotenv import load_dotenv
 import os
+from typing import Optional
+
+from dotenv import load_dotenv
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 load_dotenv()
 
@@ -13,5 +14,6 @@ class Settings(BaseSettings):
     app_version: Optional[str] = "v0.1.0"
 
     openai_api_key: str = os.environ.get("OPENAI_API_KEY")
+
 
 settings = Settings()

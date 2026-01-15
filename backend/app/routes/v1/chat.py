@@ -1,17 +1,16 @@
 from typing import cast
-from fastapi import APIRouter, Depends
 
-from app.services.llm.factory import get_llm_provider
+from fastapi import APIRouter, Depends
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import BaseMessage
-from app.agent.react_agent.main import agent
-from app.agent.react_agent.state import AgentState
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 
 # from ag_ui.core import RunAgentInput
 # from ag_ui.encoder import EventEncoder
 from app.agent.react_agent.context import AgentContext
+from app.agent.react_agent.main import agent
+from app.agent.react_agent.state import AgentState
+from app.services.llm.factory import get_llm_provider
 from app.utils import get_request_id
 
 chat_router = APIRouter(prefix="/chat", tags=["chat"])
