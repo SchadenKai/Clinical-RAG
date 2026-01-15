@@ -1,6 +1,6 @@
 from typing import Annotated, cast
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
@@ -19,8 +19,8 @@ chat_router = APIRouter(prefix="/chat", tags=["chat"])
 @chat_router.post("")
 def send_message(
     query: str,
-    request_id: Annotated[str, get_request_id],
-    llm: Annotated[BaseChatModel, get_llm_provider],
+    request_id: Annotated[str, Depends(get_request_id)],
+    llm: Annotated[BaseChatModel, Depends(get_llm_provider)],
     system_prompt: str | None = "You are a helpful assistant",
 ):
     init_state = AgentState(
