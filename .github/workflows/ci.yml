@@ -26,8 +26,8 @@ jobs:
 
             - name: Lint with Ruff
               run: |
-                uv run ruff check .
-                uv run ruff format --check .
+                cd backend && uv run ruff check .
+                cd backend && uv run ruff format --check .
 
             - name: Type check with mypy
-              run: uv run mypy .
+              run: cd backend && uv run mypy .
