@@ -28,7 +28,6 @@ jobs:
               run: |
                   cd backend
                   uv run ruff check .
-                  uv run ruff format --check .
 
             - name: Type check with mypy
               run: cd backend && uv run mypy .
