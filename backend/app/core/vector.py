@@ -28,8 +28,7 @@ class VectorClient:
             return {
                 "status_code": 200,
                 "message": (
-                    f"Healthy: {client.get_server_type()} "
-                    f"{client.get_server_version()}"
+                    f"Healthy: {client.get_server_type()} {client.get_server_version()}"
                 ),
             }
         except Exception as e:
@@ -52,7 +51,9 @@ class VectorClient:
 
         print("[INFO] Creating schema...")
         schema = client.create_schema(enable_dynamic_field=True)
-        schema.add_field()
+        schema.add_field(
+            field_name="id", datatype=DataType.INT64, is_primary=True, auto_id=True
+        )
         schema.add_field(
             field_name="vector",
             datatype=DataType.FLOAT_VECTOR,
@@ -105,10 +106,10 @@ class VectorClient:
             print(f"[ERROR] Something went wrong during deletion: {e}")
 
     def smoke_test(self):
-        desc = self.client.describe_collection(
+        stats = self.client.get_collection_stats(
             collection_name=settings.milvus_collection_name
         )
-        if not desc["fields"]:
+        if stats["row_count"] < 1:
             docs = [
                 {
                     "text": (
