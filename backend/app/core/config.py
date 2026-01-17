@@ -9,7 +9,9 @@ load_dotenv()
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env")
 
-    dev_mode: bool = True if str(os.environ.get("DEV_MODE")).lower() == "true" else False
+    dev_mode: bool = (
+        True if str(os.environ.get("DEV_MODE")).lower() == "true" else False
+    )
 
     app_title: str = "Clinical Guideline RAG Service (CDC/WHO)"
     app_version: str = "v0.1.0"
