@@ -5,7 +5,7 @@ import tiktoken
 from app.core.config import settings
 
 
-class Tokenizer:
+class TokenizerService:
     def __init__(self, model):
         self.tokenizer_model = None
         self.model: str = model
@@ -27,11 +27,13 @@ class Tokenizer:
         else:
             print("[ERROR] The model given is not found")
 
-    def compute_token_cnt(self, text: str) -> int:
+    def compute_token_cnt(self, text: str | list[str]) -> int | list[int]:
         tokenizer = self.get_tokenizer()
+        if isinstance(text, list):
+            return [len(tokens) for tokens in tokenizer.encode_batch(text)]
         return len(tokenizer.encode(text))
 
 
 @lru_cache
-def get_tokenizer() -> Tokenizer:
-    return Tokenizer(settings.llm_model_name)
+def get_tokenizer() -> TokenizerService:
+    return TokenizerService(settings.llm_model_name)

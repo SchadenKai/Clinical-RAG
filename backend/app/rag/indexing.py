@@ -27,5 +27,5 @@ def get_final_document(
 
 # storage
 def store_documents(documents: list[dict], vector_db: VectorClient) -> None:
-    db = vector_db.get_client()
+    db = vector_db.client
     db.insert(collection_name=settings, data=documents)

@@ -27,3 +27,7 @@ def get_llm_provider() -> BaseChatModel:
             api_key=settings.llm_api_key, model=settings.llm_model_name
         )
     return ChatOpenAI(model=settings.llm_model_name)
+
+class ChatLLMService:
+    def __init__(self):
+        pass

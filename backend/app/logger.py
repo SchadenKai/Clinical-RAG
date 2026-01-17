@@ -11,4 +11,4 @@ logging.basicConfig(
     ),
     handlers=[StreamHandler()],
 )
-logger = logging.getLogger(__name__)
+app_logger = logging.getLogger(__name__)

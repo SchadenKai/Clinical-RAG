@@ -10,8 +10,8 @@ from app.agent.indexing.state import AgentState
 from app.core.config import settings
 from app.rag.chunker import get_chunker
 from app.rag.db import VectorClient, get_vector_client
-from app.rag.embeddings import get_bi_encoder, get_embedding
-from app.services.llm.tokenizer import get_tokenizer
+from app.rag.embeddings import EmbeddingService, get_bi_encoder, get_embedding
+from app.services.llm.tokenizer import TokenizerService, get_tokenizer
 from app.utils import get_request_id
 
 rag_router = APIRouter(prefix="/rag", tags=["rag"])
@@ -25,7 +25,7 @@ def ingest_document(
 ):
     chunker = get_chunker("recursive")
     collection_name = settings.milvus_collection_name
-    db_client = vector_db.get_client()
+    db_client = vector_db.client
 
     init_state = AgentState(file_path="test")
     context = AgentContext(
@@ -43,12 +43,19 @@ def ingest_document(
     return None
 
 
-@rag_router.post("/embed")
-def search_documents(
+@rag_router.post("/test/embed")
+def test_embed_query(
     query: str,
-    embed: Annotated[Embeddings, Depends(get_embedding)],
-    tokenizer: Annotated[Embeddings, Depends(get_tokenizer)],
-    vector_db: Annotated[VectorClient, Depends(get_vector_client)],
-    request_id: Annotated[str, Depends(get_request_id)],
+    embed: Annotated[EmbeddingService, Depends(get_embedding)],
+    tokenizer: Annotated[TokenizerService, Depends(get_tokenizer)],
 ) -> list[float]:
     return embed.embed_query(query, tokenizer)
+
+
+@rag_router.post("/test/embed/batch")
+def test_embed_queries(
+    query_list: list[str],
+    embed: Annotated[EmbeddingService, Depends(get_embedding)],
+    tokenizer: Annotated[TokenizerService, Depends(get_tokenizer)],
+) -> list[list[float]]:
+    return embed.embed_documents(query_list, tokenizer)

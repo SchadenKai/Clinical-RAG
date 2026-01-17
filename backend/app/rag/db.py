@@ -4,27 +4,27 @@ from langchain.embeddings import Embeddings
 from pymilvus import DataType, IndexType, MilvusClient
 
 from app.core.config import settings
-from app.rag.embeddings import get_bi_encoder
+from app.rag.embeddings import get_embedding
 
 
 class VectorClient:
     def __init__(self, embedding_model: Embeddings):
-        self.client: MilvusClient = None
+        self._client: MilvusClient = None
         self.encoder = embedding_model
 
-    def get_client(self) -> MilvusClient:
-        if self.client:
-            return self.client
-        client = MilvusClient(
+    @property
+    def client(self) -> MilvusClient:
+        if self._client:
+            return self._client
+        self._client = MilvusClient(
             uri=settings.milvus_url,
             user=settings.milvus_user,
             password=settings.milvus_password,
         )
-        self.client = client
-        return client
+        return self._client
 
     def health_check(self) -> str:
-        client = self.get_client()
+        client = self.client
         try:
             return {
                 "status_code": 200,
@@ -36,7 +36,7 @@ class VectorClient:
             return {"status_code": 500, "message": f"Something went wrong: {e}"}
 
     def setup(self) -> None:
-        client = self.get_client()
+        client = self.client
         print(
             f"[DEBUG] Health check: {client.get_server_type()}:"
             f" {client.get_server_version()}"
@@ -100,7 +100,7 @@ class VectorClient:
         collection_name: str | None = settings.milvus_collection_name,
     ) -> None:
         try:
-            client = self.get_client()
+            client = self.client
             client.use_database(db_name=settings.milvus_db_name)
             client.drop_collection(collection_name=collection_name)
         except Exception as e:
@@ -303,5 +303,5 @@ class VectorClient:
 
 @lru_cache()
 def get_vector_client() -> VectorClient:
-    encoder = get_bi_encoder()
-    return VectorClient(encoder)
+    embedding = get_embedding().client
+    return VectorClient(embedding)

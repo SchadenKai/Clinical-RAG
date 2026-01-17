@@ -6,14 +6,12 @@ from fastapi import Depends, FastAPI
 
 from app.core.config import settings
 from app.rag.db import VectorClient, get_vector_client
-from app.rag.embeddings import get_bi_encoder
 from app.routes.v1.main import v1_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
-    encoder = get_bi_encoder()
-    vector_db = VectorClient(encoder)
+    vector_db = get_vector_client()
     # vector_db.delete_collection()
     vector_db.setup()
     vector_db.load_collection()
