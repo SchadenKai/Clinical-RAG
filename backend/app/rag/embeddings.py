@@ -16,14 +16,6 @@ from app.services.llm.calculate_cost import calculate_cost
 from app.services.llm.tokenizer import TokenizerService
 
 
-def get_bi_encoder() -> Embeddings:
-    return OpenAIEmbeddings(
-        api_key=settings.openai_api_key,
-        model=settings.bi_encoder_model,
-        dimensions=settings.vector_dim,
-    )
-
-
 # TODO: check if this is the best way to import deps
 class EmbeddingService:
     def __init__(self, provider, config, setting, logger):
@@ -50,6 +42,12 @@ class EmbeddingService:
             else:
                 self._client = OpenAIEmbeddings(**self.config)
         return self._client
+
+    def test_client_on_startup(self) -> None:
+        try:
+            self.client.embed_query("test")
+        except Exception as e:
+            raise Exception(f"Something went wrong: {e}") from e
 
     def embed_query(self, text: str, tokenizer: TokenizerService) -> list[float]:
         start_time = time.time()
