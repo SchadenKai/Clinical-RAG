@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.rag.chunker import get_chunker
 from app.rag.db import VectorClient, get_vector_client
 from app.rag.embeddings import EmbeddingService, get_bi_encoder, get_embedding
+from app.rag.models import EmbeddingResponseModel
 from app.services.llm.tokenizer import TokenizerService, get_tokenizer
 from app.utils import get_request_id
 
@@ -48,7 +49,7 @@ def test_embed_query(
     query: str,
     embed: Annotated[EmbeddingService, Depends(get_embedding)],
     tokenizer: Annotated[TokenizerService, Depends(get_tokenizer)],
-) -> list[float]:
+) -> EmbeddingResponseModel:
     return embed.embed_query(query, tokenizer)
 
 
@@ -57,5 +58,5 @@ def test_embed_queries(
     query_list: list[str],
     embed: Annotated[EmbeddingService, Depends(get_embedding)],
     tokenizer: Annotated[TokenizerService, Depends(get_tokenizer)],
-) -> list[list[float]]:
+) -> EmbeddingResponseModel:
     return embed.embed_documents(query_list, tokenizer)

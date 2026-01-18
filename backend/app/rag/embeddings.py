@@ -1,3 +1,4 @@
+import time
 from functools import lru_cache
 from logging import Logger
 
@@ -8,10 +9,11 @@ from langchain_openai.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
 
 from app.core.config import Settings, settings
 from app.logger import app_logger
+from app.rag.models import EmbeddingResponseModel
+from app.services.llm.calculate_cost import calculate_cost
 
 # TODO: replace this with adapter
 from app.services.llm.tokenizer import TokenizerService
-from app.services.llm.calculate_cost import calculate_cost
 
 
 def get_bi_encoder() -> Embeddings:
@@ -22,6 +24,7 @@ def get_bi_encoder() -> Embeddings:
     )
 
 
+# TODO: check if this is the best way to import deps
 class EmbeddingService:
     def __init__(self, provider, config, setting, logger):
         self._client: Embeddings | None = None
@@ -49,37 +52,47 @@ class EmbeddingService:
         return self._client
 
     def embed_query(self, text: str, tokenizer: TokenizerService) -> list[float]:
-        # compute the number of tokens based on the model
+        start_time = time.time()
+
+        embed = self.client
+        result_vector = embed.embed_query(text)
+        duration_ms = (time.time() - start_time) * 1000  # convert seconds to ms
+
+        # TODO: Make this non IO blocking
         token_cnt = tokenizer.compute_token_cnt(text)
-        self.logger.info(f"Total token count: {token_cnt}")
-        # get the model name and provider from settings
-        input_cost, _, total_cost = calculate_cost(
+        _, _, total_cost = calculate_cost(
             model_name=self.settings.llm_model_name,
             input_token=token_cnt,
-            formatted=True,
         )
-        self.logger.info(f"Input cost: ${input_cost}, Total cost: ${total_cost}")
-        # run the logic
-        embed = self.client
-        return embed.embed_query(text)
+        return EmbeddingResponseModel(
+            embeding=result_vector,
+            token_count=token_cnt,
+            total_cost=total_cost,
+            duration_ms=duration_ms,
+        )
 
     def embed_documents(
         self, documents: list[str], tokenizer: TokenizerService
     ) -> list[float]:
-        # compute the number of tokens based on the model
-        token_counts = tokenizer.compute_token_cnt(documents)
-        self.logger.info(f"Total token count: {token_counts}")
-        # get the model name and provider from settings
-        for token_cnt in token_counts:
-            input_cost, _, total_cost = calculate_cost(
-                model_name=self.settings.llm_model_name,
-                input_token=token_cnt,
-                formatted=True,
-            )
-            self.logger.info(f"Input cost: ${input_cost}, Total cost: ${total_cost}")
-        # run the logic
+        start_time = time.time()
         embed = self.client
-        return embed.embed_documents(documents)
+        result_vector = embed.embed_documents(documents)
+        duration_ms = (time.time() - start_time) * 1000  # convert seconds to ms
+
+        # TODO: Make this non IO blocking
+        token_cnt = tokenizer.compute_token_cnt(documents)
+        _, _, total_cost = calculate_cost(
+            model_name=self.settings.llm_model_name,
+            input_token=token_cnt,
+            is_batch=True,
+        )
+
+        return EmbeddingResponseModel(
+            embeding=result_vector,
+            token_count=token_cnt,
+            total_cost=total_cost,
+            duration_ms=duration_ms,
+        )
 
 
 @lru_cache
