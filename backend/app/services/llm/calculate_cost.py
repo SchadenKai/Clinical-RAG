@@ -6,6 +6,7 @@ def calculate_cost(
     input_token: int | None = None,
     output_token: int | None = None,
     formatted: bool = False,
+    is_batch: bool = False,
 ) -> tuple[float | str, float | str, float | str]:
     model_name = model_name.strip().lower()
 
@@ -13,11 +14,20 @@ def calculate_cost(
     if pricing_info is None:
         raise ValueError(f"Model {model_name} does not have a pricing information.")
 
-    input_cost = (
-        pricing_info["input_price"] * input_token if input_token else 0
-    ) / 1000000
+    in_key = (
+        "batch_input_price"
+        if is_batch and pricing_info["batch_input_price"]
+        else "input_price"
+    )
+    out_key = (
+        "batch_output_price"
+        if is_batch and pricing_info["batch_output_price"]
+        else "output_price"
+    )
+
+    input_cost = (pricing_info[in_key] * input_token if input_token else 0) / 1000000
     output_cost = (
-        pricing_info["output_price"] * output_token if output_token else 0
+        pricing_info[out_key] * output_token if output_token else 0
     ) / 1000000
     total_cost = input_cost + output_cost
 
