@@ -1,7 +1,6 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from langchain_core.embeddings import Embeddings
 from langchain_core.runnables import RunnableConfig
 
 from app.agent.indexing.context import AgentContext
@@ -20,8 +19,9 @@ rag_router = APIRouter(prefix="/rag", tags=["rag"])
 
 @rag_router.post("/ingest")
 def ingest_document(
-    encoder: Annotated[Embeddings, Depends(get_embedding)],
+    encoder: Annotated[EmbeddingService, Depends(get_embedding)],
     vector_db: Annotated[VectorClient, Depends(get_vector_client)],
+    tokenizer: Annotated[TokenizerService, Depends(get_tokenizer)],
     request_id: Annotated[str, Depends(get_request_id)],
 ):
     chunker = get_chunker("recursive")
@@ -32,6 +32,7 @@ def ingest_document(
     context = AgentContext(
         chunker=chunker,
         encoder=encoder,
+        tokenizer=tokenizer,
         db_client=db_client,
         collection_name=collection_name,
     )

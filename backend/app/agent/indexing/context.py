@@ -1,12 +1,15 @@
-from langchain_core.embeddings import Embeddings
 from langchain_text_splitters import TextSplitter
 from pydantic import BaseModel, ConfigDict
 from pymilvus import MilvusClient
 
+from app.rag.embeddings import EmbeddingService
+from app.services.llm.tokenizer import TokenizerService
+
 
 class AgentContext(BaseModel):
     chunker: TextSplitter
-    encoder: Embeddings
+    encoder: EmbeddingService
+    tokenizer: TokenizerService
     db_client: MilvusClient
     collection_name: str
 

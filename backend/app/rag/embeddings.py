@@ -50,7 +50,9 @@ class EmbeddingService:
         except Exception as e:
             raise Exception(f"Something went wrong: {e}") from e
 
-    def embed_query(self, text: str, tokenizer: TokenizerService) -> list[float]:
+    def embed_query(
+        self, text: str, tokenizer: TokenizerService
+    ) -> EmbeddingResponseModel:
         start_time = time.time()
 
         embed = self.client
@@ -72,7 +74,7 @@ class EmbeddingService:
 
     def embed_documents(
         self, documents: list[str], tokenizer: TokenizerService
-    ) -> list[float]:
+    ) -> EmbeddingResponseModel:
         start_time = time.time()
         embed = self.client
         result_vector = embed.embed_documents(documents)
