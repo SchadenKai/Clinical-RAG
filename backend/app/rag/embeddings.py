@@ -4,6 +4,7 @@ from logging import Logger
 
 from langchain_core.embeddings import Embeddings, FakeEmbeddings
 from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
+from langchain_nebius.embeddings import NebiusEmbeddings
 from langchain_nomic.embeddings import NomicEmbeddings
 from langchain_openai.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
 
@@ -40,59 +41,63 @@ class EmbeddingService:
                 self._client = FakeEmbeddings(**self.config)
             elif self.provider == "nomic":
                 self._client = NomicEmbeddings(**self.config)
+            elif self.provider == "nebius":
+                self._client = NebiusEmbeddings(**self.config)
             else:
                 self._client = OpenAIEmbeddings(**self.config)
         return self._client
 
     def test_client_on_startup(self) -> None:
         try:
-            self.client.embed_query("test")
+            self.client.embed_query("")
         except Exception as e:
             raise Exception(f"Something went wrong: {e}") from e
 
     def embed_query(
-        self, text: str, tokenizer: TokenizerService
+        self, text: str, tokenizer: TokenizerService, event_name: str | None = None
     ) -> EmbeddingResponseModel:
         start_time = time.time()
-
-        embed = self.client
-        result_vector = embed.embed_query(text)
+        result_vector = self.client.embed_query(text)
         duration_ms = (time.time() - start_time) * 1000  # convert seconds to ms
 
         # TODO: Make this non IO blocking
-        token_cnt = tokenizer.compute_token_cnt(text)
+        token_cnt = tokenizer.compute_token_cnt(text, is_embedding_model=True)
         _, _, total_cost = calculate_cost(
-            model_name=self.settings.llm_model_name,
+            model_name=self.settings.bi_encoder_model,
             input_token=token_cnt,
         )
         return EmbeddingResponseModel(
-            embeding=result_vector,
+            embedding=result_vector,
             token_count=token_cnt,
             total_cost=total_cost,
             duration_ms=duration_ms,
+            event=event_name,
         )
 
     def embed_documents(
-        self, documents: list[str], tokenizer: TokenizerService
+        self,
+        documents: list[str],
+        tokenizer: TokenizerService,
+        event_name: str | None = None,
     ) -> EmbeddingResponseModel:
         start_time = time.time()
-        embed = self.client
-        result_vector = embed.embed_documents(documents)
+        result_vector = self.client.embed_documents(documents)
         duration_ms = (time.time() - start_time) * 1000  # convert seconds to ms
 
         # TODO: Make this non IO blocking
-        token_cnt = tokenizer.compute_token_cnt(documents)
+        token_cnt = tokenizer.compute_token_cnt(documents, is_embedding_model=True)
         _, _, total_cost = calculate_cost(
-            model_name=self.settings.llm_model_name,
+            model_name=self.settings.bi_encoder_model,
             input_token=token_cnt,
             is_batch=True,
         )
 
         return EmbeddingResponseModel(
-            embeding=result_vector,
+            embedding=result_vector,
             token_count=token_cnt,
             total_cost=total_cost,
             duration_ms=duration_ms,
+            event=event_name,
         )
 
 
@@ -100,11 +105,11 @@ class EmbeddingService:
 def get_embedding() -> EmbeddingService:
     # currently only designed for openai
     _config = {
-        "api_key": settings.openai_api_key,
+        "api_key": settings.llm_api_key,
         "model": settings.bi_encoder_model,
-        "dimensions": settings.vector_dim,
-        "max_retries": 5,
-        "request_timeout": None,
+        # "dimensions": settings.vector_dim,
+        # "max_retries": 5,
+        # "request_timeout": None,
     }
     return EmbeddingService(
         provider=settings.llm_provider,

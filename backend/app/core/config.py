@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     milvus_password: str = os.environ.get("MILVUS_PASSWORD", "Milvus")
 
     # vector config
-    vector_dim: int = 512
+    vector_dim: int = 3584
     text_field_max_length: int = 2048
     chunk_size: int = 1000
     chunk_overlap: int = 200
@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     embedding_provider: str = os.environ.get("EMBEDDING_PROVIDER", "openai")
     embedding_api_key: str = os.environ.get("EMBEDDING_API_KEY", "")
     bi_encoder_model: str = os.environ.get("BI_ENCODER_MODEL", "text-embedding-3-small")
+
+    hf_api_key: str = os.environ.get("HUGGING_FACE_API_KEY", "")
 
 
 settings = Settings()

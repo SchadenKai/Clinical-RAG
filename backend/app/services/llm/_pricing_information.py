@@ -166,7 +166,6 @@ model_pricing = {
         "batch_input_price": 0.05,
         "batch_output_price": 0.00,
     },
-
     # =========================================================================
     # ANTHROPIC LLMs
     # Policy: Message Batches API is 50% cheaper than standard.
@@ -207,7 +206,6 @@ model_pricing = {
         "batch_input_price": 1.50,
         "batch_output_price": 7.50,
     },
-
     # =========================================================================
     # GOOGLE GEMINI
     # Note: Vertex AI Batch Prediction often uses node-hour billing, not per-token.
@@ -225,7 +223,6 @@ model_pricing = {
         "batch_input_price": None,
         "batch_output_price": None,
     },
-
     # =========================================================================
     # META (Direct/Generic)
     # =========================================================================
@@ -247,7 +244,6 @@ model_pricing = {
         "batch_input_price": None,
         "batch_output_price": None,
     },
-
     # =========================================================================
     # NEBIUS AI MODELS
     # Policy: Batch inference is automatically 50% off the Base price.
@@ -351,6 +347,12 @@ model_pricing = {
         "output_price": 0.27,
         "batch_input_price": 0.135,
         "batch_output_price": 0.135,
+    },
+    "baai/bge-multilingual-gemma2": {
+        "input_price": 0.01,
+        "output_price": 0.00,
+        "batch_input_price": 0.01,
+        "batch_output_price": 0.00,
     },
     "microsoft/Phi-3.5-mini-instruct": {
         "input_price": 0.02,

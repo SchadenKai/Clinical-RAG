@@ -1,39 +1,86 @@
 from functools import lru_cache
 
 import tiktoken
+from transformers import AutoTokenizer
 
 from app.core.config import settings
+from app.logger import app_logger
+
+from ._tokenizer_list import nebius_model_map
 
 
 class TokenizerService:
-    def __init__(self, model):
-        self.tokenizer_model = None
+    def __init__(self, model, embedding, model_provider, embedding_provider):
+        self._tokenizer_model = None
+        self._embedding_tokenizer_model = None
         self.model: str = model
+        self.embedding: str = embedding
+        self.model_provider: str = model_provider
+        self.embedding_provider: str = embedding_provider
 
-    def get_tokenizer(self):
-        if self.tokenizer_model is not None:
-            return self.tokenizer_model
+    @property
+    def embedding_tokenizer(self):
+        if self._embedding_tokenizer_model is not None:
+            return self._embedding_tokenizer_model
 
-        if self.model.startswith("o") or self.model.startswith("gpt"):
-            encoding_name = tiktoken.encoding_name_for_model(self.model)
-            self.tokenizer_model = tiktoken.get_encoding(encoding_name)
-            return self.tokenizer_model
-        elif self.model.startswith("claude"):
-            # To be filled up later using claude's tokenizer
-            pass
-        elif self.model.startswith("gemini"):
-            # To be filled up later using gemini's tokenizer
-            pass
+        if self.model_provider == "openai":
+            encoding_name = tiktoken.encoding_name_for_model(self.embedding)
+            self._embedding_tokenizer_model = tiktoken.get_encoding(encoding_name)
+        elif self.model_provider == "nebius":
+            hf_model_id = nebius_model_map[self.embedding.replace("-fast", "")]
+            self._embedding_tokenizer_model = AutoTokenizer.from_pretrained(
+                hf_model_id, token=settings.hf_api_key, trust_remote_code=True
+            )
         else:
-            print("[ERROR] The model given is not found")
+            app_logger.error("Given embedding provider is not yet supported.")
+            raise ValueError("Given embedding provider is not yet supported.")
+        app_logger.info(f"Getting tokenizer model for given model: {self.embedding}")
+        return self._embedding_tokenizer_model
 
-    def compute_token_cnt(self, text: str | list[str]) -> int:
-        tokenizer = self.get_tokenizer()
+    @property
+    def llm_tokenizer(self):
+        if self._tokenizer_model is not None:
+            return self._tokenizer_model
+
+        if self.model_provider == "openai":
+            encoding_name = tiktoken.encoding_name_for_model(self.model)
+            self._tokenizer_model = tiktoken.get_encoding(encoding_name)
+            return self._tokenizer_model
+        elif self.model_provider == "nebius":
+            hf_model_id = nebius_model_map[self.model]
+            tokenizer = AutoTokenizer.from_pretrained(
+                hf_model_id, token=settings.hf_api_key, trust_remote_code=True
+            )
+            self._tokenizer_model = tokenizer
+            return self._tokenizer_model
+        else:
+            app_logger.error("Given embedding provider is not yet supported.")
+            raise ValueError("Given embedding provider is not yet supported.")
+
+    def compute_token_cnt(
+        self, text: str | list[str], is_embedding_model: bool = True
+    ) -> int:
+        tokenizer = (
+            self.embedding_tokenizer if is_embedding_model else self.llm_tokenizer
+        )
         if isinstance(text, list):
-            return sum([len(tokens) for tokens in tokenizer.encode_batch(text)])
+            try:
+                return sum([len(tokens) for tokens in tokenizer.encode_batch(text)])
+            except Exception as e:
+                app_logger.warning(
+                    f"Something went wrong during batch tokenization: {e}"
+                )
+                tokens = tokenizer(text)
+                tokens = tokens["input_ids"][0]
+                return len(tokens)
         return len(tokenizer.encode(text))
 
 
 @lru_cache
-def get_tokenizer() -> TokenizerService:
-    return TokenizerService(settings.llm_model_name)
+def get_tokenizer_service() -> TokenizerService:
+    return TokenizerService(
+        model=settings.llm_model_name,
+        embedding=settings.bi_encoder_model,
+        model_provider=settings.llm_provider,
+        embedding_provider=settings.embedding_provider,
+    )
