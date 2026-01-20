@@ -52,10 +52,13 @@ def doc_builder_node(state: AgentState, runtime: Runtime[AgentContext]) -> Agent
         return state
 
     text_list = [doc.page_content for doc in state.chunked_documents]
-    embed_results = embedding.embed_documents(
+    res = embedding.embed_documents(
         text_list, tokenizer, event_name="indexing batch documents"
     )
-    vector_list = embed_results.embedding
+    vector_list = res.embedding
+    res = res.model_dump()
+    res.pop("embedding")
+
     final_doc_list = []
     for i, doc in enumerate(state.chunked_documents):
         final_doc = {
@@ -69,12 +72,7 @@ def doc_builder_node(state: AgentState, runtime: Runtime[AgentContext]) -> Agent
     return {
         "final_documents": final_doc_list,
         "progress_status": ProgressStatusEnum.BUILDING_DOCS,
-        "run_metadata": {
-            "token_count": embed_results.token_count,
-            "total_cost": f"${embed_results.total_cost:.10f}",
-            "duration_ms": embed_results.duration_ms,
-            "event": embed_results.event,
-        },
+        "run_metadata": {**res},
     }
 
 
