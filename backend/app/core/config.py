@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     text_field_max_length: int = 2048
     chunk_size: int = 1000
     chunk_overlap: int = 200
+    lowest_score_threshold: float = 0.6
+    highest_score_threshold: float = 1.0
 
     # model config
     embedding_provider: str = os.environ.get("EMBEDDING_PROVIDER", "openai")

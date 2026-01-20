@@ -16,7 +16,7 @@ from app.services.llm.factory import get_chat_model_service
 async def lifespan(app: FastAPI) -> AsyncGenerator:
     app_logger.info("Initializing vector database")
     vector_db = get_vector_client()
-    vector_db.delete_collection()
+    # vector_db.delete_collection()
     vector_db.setup()
     vector_db.load_collection()
     vector_db.smoke_test()

@@ -9,6 +9,7 @@ from crawl4ai import (
 
 async def simple_crawler(url: str) -> CrawlResult:
     browser_config = BrowserConfig()
+    # TODO: configure this for CDC / WHO website
     run_config = CrawlerRunConfig(
         cache_mode=CacheMode.ENABLED,  # Tag exclusions
         excluded_tags=["form", "header", "footer", "nav"],
