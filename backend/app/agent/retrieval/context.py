@@ -1,3 +1,4 @@
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_text_splitters import TextSplitter
 from pydantic import BaseModel, ConfigDict
 from pymilvus import MilvusClient
@@ -12,6 +13,7 @@ class AgentContext(BaseModel):
     tokenizer: TokenizerService
     db_client: MilvusClient
     collection_name: str
+    chat_model: BaseChatModel
     include_generation: bool = False
 
     model_config = ConfigDict(arbitrary_types_allowed=True)

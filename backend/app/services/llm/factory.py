@@ -10,7 +10,7 @@ from app.core.config import settings
 from app.logger import app_logger
 
 
-class ChatModelClient:
+class ChatModelService:
     def __init__(self, provider, model_name, api_key):
         self._client: BaseChatModel | None = None
         self.provider: str = provider
@@ -49,8 +49,8 @@ class ChatModelClient:
 
 
 @lru_cache
-def get_chat_model_service() -> ChatModelClient:
-    return ChatModelClient(
+def get_chat_model_service() -> ChatModelService:
+    return ChatModelService(
         provider=settings.llm_provider,
         model_name=settings.llm_model_name,
         api_key=settings.llm_api_key,

@@ -15,6 +15,7 @@ from app.rag.chunker import get_chunker
 from app.rag.db import VectorClient, get_vector_client
 from app.rag.embeddings import EmbeddingService, get_embedding
 from app.rag.models import EmbeddingResponseModel
+from app.services.llm.factory import ChatModelService, get_chat_model_service
 from app.services.llm.tokenizer import TokenizerService, get_tokenizer_service
 from app.utils import get_request_id
 
@@ -57,11 +58,13 @@ def retrieve_documents(
     vector_db: Annotated[VectorClient, Depends(get_vector_client)],
     tokenizer: Annotated[TokenizerService, Depends(get_tokenizer_service)],
     request_id: Annotated[str, Depends(get_request_id)],
+    chat_model_service: Annotated[ChatModelService, Depends(get_chat_model_service)],
     run_llm: bool = False,
 ):
     chunker = get_chunker("recursive")
     collection_name = settings.milvus_collection_name
     db_client = vector_db.client
+    chat_model = chat_model_service.client
 
     init_state = InferenceAgentState(input_query=query)
     context = InferenceAgentContext(
@@ -69,14 +72,15 @@ def retrieve_documents(
         embedding=encoder,
         tokenizer=tokenizer,
         db_client=db_client,
+        chat_model=chat_model,
         collection_name=collection_name,
         include_generation=run_llm,
     )
     config: RunnableConfig = {"configurable": {"thread_id": request_id}}
     final_response = {}
     for res in inference_agent.stream(input=init_state, context=context, config=config):
-        for node_name, state in res.items():
-            if "final_report_generation" in node_name:
+        for _, state in res.items():
+            if state:
                 state = cast(dict, state)
                 state.pop("embedded_query")
                 final_response = state
