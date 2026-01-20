@@ -10,7 +10,7 @@ from langchain_core.runnables import RunnableConfig
 from app.agent.react_agent.context import AgentContext
 from app.agent.react_agent.main import agent
 from app.agent.react_agent.state import AgentState
-from app.services.llm.factory import get_llm_provider
+from app.services.llm.factory import get_chat_model_service
 from app.utils import get_request_id
 
 chat_router = APIRouter(prefix="/chat", tags=["chat"])
@@ -20,7 +20,7 @@ chat_router = APIRouter(prefix="/chat", tags=["chat"])
 def send_message(
     query: str,
     request_id: Annotated[str, Depends(get_request_id)],
-    llm: Annotated[BaseChatModel, Depends(get_llm_provider)],
+    llm: Annotated[BaseChatModel, Depends(get_chat_model_service)],
     system_prompt: str | None = "You are a helpful assistant",
 ):
     init_state = AgentState(
