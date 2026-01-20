@@ -40,7 +40,7 @@ class ChatModelClient:
             )
         else:
             self._client = ChatOpenAI(model=self.model_name)
-        app_logger.info(f"Selected model: {self._client.name}")
+        app_logger.info(f"Selected model: {self._client.get_name()}")
         return self._client
 
     def test_chat_model(self) -> None:
