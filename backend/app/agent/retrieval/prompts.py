@@ -17,15 +17,15 @@ the vector database.
     needed is not present in the vector database, then it must not be answerable
     by you.
 3. Citation Formatting: Document/s that are used to create a sentence or a
-    phrase in the final answer must be cited by getting the source url and nature
-    of the source (ex. web. If the source is URL, then the source should be "web"),
+    phrase in the final answer must be cited by getting the source url and the
+    index of the source document in the list of relevant documents,
     and put the following format given below next to the phrase / sentence:
     ```
-    [{document_source}]({source_url})
+    [{document_idx}]({source_url})
     ```
 """
 
 HUMAN_MESSAGE_TEMPLATE = """
-User query: {user_query}
-Relevant documents: {relevant_documents}
+User query (str): {user_query}
+Relevant documents (list): {relevant_documents}
 """
