@@ -1,5 +1,5 @@
 # stage 1: builder
-FROM python:3.13.11-slim-bookworm as builder
+FROM python:3.13.11-slim-bookworm AS builder
 
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
@@ -22,10 +22,16 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 COPY app ./app
 
-# create a non-root user (named "appuser") and set access to the /app directory
-RUN useradd -m appuser && chown -R appuser /app
+RUN apt-get update && \
+    playwright install-deps && \
+    rm -rf /var/lib/apt/lists/* && \
+    useradd -m appuser && chown -R appuser /app
 
 # set created user as the current user
 USER appuser
+
+RUN playwright install
+
+EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

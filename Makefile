@@ -6,3 +6,7 @@ run-containers:
 
 run-vectors-db:
 	cd deployment && docker compose -f docker-compose.milvus.yml up -d
+
+push-image:
+	cd backend && docker build -t schadenkai/cdc-who-rag-system:latest .
+	docker push schadenkai/cdc-who-rag-system:latest
