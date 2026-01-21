@@ -13,5 +13,7 @@ class AgentState(BaseModel):
     sources: Optional[list[str]] = None
     run_metadata: Optional[dict] = None
     safety_classification: Optional[SafetyClassifierSOModel] = None
+    is_verified_citations: bool = True
+    wrong_citations: Optional[list] = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)

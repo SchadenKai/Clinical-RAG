@@ -1,12 +1,15 @@
+import re
 import time
 from typing import Literal
 
+import validators
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.runtime import Runtime
 
 from .context import AgentContext
 from .models import SafetyClassificationEnum, SafetyClassifierSOModel
 from .prompts import (
+    FIX_CITATION_PROMPT,
     HUMAN_MESSAGE_TEMPLATE,
     REFUSAL_AGENT_HUMAN_PROMPT_TEMPLATE,
     REFUSAL_AGENT_SYSTEM_PROMPT,
@@ -140,17 +143,66 @@ def final_report_generation(
 ) -> AgentState:
     if runtime.context.chat_model is None:
         raise ValueError("Missing vector database client")
+    system_prompt = (
+        REPORT_GENERATION_SYSTEM_PROMPT
+        if state.is_verified_citations
+        else REPORT_GENERATION_SYSTEM_PROMPT
+        + FIX_CITATION_PROMPT.format(wrong_citations=state.wrong_citations)
+    )
     messages: list[BaseMessage] = [
-        SystemMessage(content=REPORT_GENERATION_SYSTEM_PROMPT),
+        SystemMessage(content=system_prompt),
         HumanMessage(
             content=HUMAN_MESSAGE_TEMPLATE.format(
-                user_query=state.input_query, relevant_documents=str(state.documents)
+                user_query=state.input_query,
+                relevant_documents=str(state.documents),
             )
         ),
     ]
     result = runtime.context.chat_model.invoke(messages)
     result = result.content
     return state.model_copy(update={"final_answer": result})
+
+
+def citation_verification(state: AgentState) -> AgentState:
+    if state.final_answer is None:
+        raise ValueError("The final answer cannot be empty")
+    if state.sources is None:
+        raise ValueError("Source list cannot be empty")
+
+    citation_pattern = r"\[([^\]]+)\]\(([^)]+)\)"
+    citation_list: list[str, str] = re.findall(citation_pattern, state.final_answer)
+    # TODO: change this into a pydantic model instead
+    wrong_citations = []
+    is_verified_citation = True
+    for citation in citation_list:
+        if not citation[0].strip().isdigit():
+            wrong_citations.append(citation)
+            is_verified_citation = False
+            continue
+        if not validators.url(citation[1]):
+            wrong_citations.append(citation)
+            is_verified_citation = False
+            continue
+        if state.sources[int(citation[0])] != citation[1]:
+            wrong_citations.append(citation)
+            is_verified_citation = False
+
+    if is_verified_citation:
+        return state
+    return state.model_copy(
+        update={
+            "is_verified_citations": is_verified_citation,
+            "wrong_citations": wrong_citations,
+        }
+    )
+
+
+def is_citation_correct(
+    state: AgentState,
+) -> Literal["final_report_generation", "__end__"]:
+    if state.is_verified_citations:
+        return "__end__"
+    return "final_report_generation"
 
 
 def should_use_llm(

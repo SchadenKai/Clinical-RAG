@@ -32,6 +32,14 @@ the vector database.
     ```
 """
 
+FIX_CITATION_PROMPT = """
+## FOLLOW UP
+There is something wrong with setting your citation in the final answer. The specific
+wrong citation comes from the following:
+
+{wrong_citations}
+"""
+
 HUMAN_MESSAGE_TEMPLATE = """
 User query (str): {user_query}
 Relevant documents (list): {relevant_documents}
