@@ -23,6 +23,7 @@ ENV PATH="/app/.venv/bin:$PATH"
 COPY app ./app
 
 RUN apt-get update && \
+    apt-get install -y curl &&\
     playwright install-deps && \
     rm -rf /var/lib/apt/lists/* && \
     useradd -m appuser && chown -R appuser /app
