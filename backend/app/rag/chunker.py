@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Literal
 
 from langchain_text_splitters import (
@@ -7,18 +8,27 @@ from langchain_text_splitters import (
     TextSplitter,
 )
 
+_CHUNKERS_NAME = Literal["semantic", "recursive", "markdown"]
 
-# TODO: Make this a factory instead
-def get_chunker(
-    chunking_type: Literal["semantic", "recursive", "md"],
-) -> TextSplitter:
-    if chunking_type == "semantic":
-        return SentenceTransformersTokenTextSplitter()
-    if chunking_type == "recursive":
-        return RecursiveCharacterTextSplitter(
-            chunk_size=1021,
-            chunk_overlap=10,
-        )
-    if chunking_type == "md":
-        return MarkdownTextSplitter()
-    return RecursiveCharacterTextSplitter()
+
+class ChunkerService:
+    def __init__(self):
+        self._chunkers: dict[_CHUNKERS_NAME, TextSplitter] = {
+            "semantic": SentenceTransformersTokenTextSplitter,
+            "recursive": RecursiveCharacterTextSplitter(
+                chunk_size=1021,
+                chunk_overlap=10,
+            ),
+            "markdown": MarkdownTextSplitter,
+        }
+
+    def get(self, chunker_name: _CHUNKERS_NAME, **kwargs) -> TextSplitter:
+        chunker = self._chunkers.get(chunker_name)
+        if chunker is None:
+            raise ValueError("Chunker is not available")
+        return chunker(**kwargs)
+
+
+@lru_cache
+def get_chunker() -> ChunkerService:
+    return ChunkerService()
