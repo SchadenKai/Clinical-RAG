@@ -69,9 +69,9 @@ class TokenizerService:
                     f"Something went wrong during batch tokenization: {e}"
                 )
                 tokens = tokenizer(text)
-                tokens = tokens["input_ids"][0]
+                token_count = sum([len(token) for token in tokens["input_ids"]])
                 if tokens is None:
                     app_logger.error("Tokens is missing")
                     raise ValueError("Tokens is missing") from e
-                return len(tokens)
+                return token_count
         return len(tokenizer.encode(text))
