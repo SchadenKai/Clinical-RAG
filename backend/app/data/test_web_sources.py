@@ -7,7 +7,6 @@ urls = [
     "https://www.who.int/news/item/13-10-2025-medical-product-alert-n-5-2025--substandard-(contaminated)-oral-liquid-medicines",
     "https://www.who.int/news/item/12-05-2025-who-results-report-2024-shows-health-progress-across-regions-overcoming-critical-challenges",
     "https://www.who.int/news/item/02-12-2024-world-aids-day-2024--prioritizing-the-rights-of-young-people-through-evidence-based-interventions",
-    "https://www.who.int/news/item/29-07-2024-who-announces-the-2024-updated-compendium-of-interventions-on-environmental-health",
     "https://www.who.int/news/item/08-02-2024-who-medically-important-antimicrobial-list-2024",
     "https://www.who.int/news/item/21-05-2025-message-by-the-director-of-the-department-of-immunization--vaccines-and-biologicals-at-who---may-2025",
     # CDC Releases & Reports
