@@ -97,9 +97,13 @@ class TestIndexingRAGService:
             website_url="https://google.com", request_id="12315aianodwdian"
         )
         assert isinstance(result, dict)
-        assert {"token_count", "total_cost", "duration_ms", "event"}.issubset(
-            result.keys()
-        )
+        assert {
+            "website_url",
+            "raw_document",
+            "chunked_documents",
+            "progress_status",
+            "run_metadata",
+        } == set(result.keys())
 
     def test_get_chunking_called(self, indexing_service: IndexingService):
         _ = indexing_service.ingest_document(

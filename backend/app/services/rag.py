@@ -53,7 +53,9 @@ class IndexingService:
         ):
             for node_name, state in res.items():
                 if "indexing_node" in node_name:
-                    final_response = state["run_metadata"]
+                    state = cast(dict, state)
+                    state.pop("final_documents")
+                    final_response = state
         return final_response
 
 
