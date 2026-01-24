@@ -67,6 +67,13 @@ markers = [
     "integration: marks tests as integration tests"
 ]
 
+[tool.coverage.run]
+omit = [
+    "app/logger.py",           # Pure boilerplate
+    "app/rag/_smoke_test_docs.py", # Test artifacts
+    "*/__init__.py"            # Empty init files
+]
+
 [tool.coverage.report]
 skip_empty = true
 precision = 2
