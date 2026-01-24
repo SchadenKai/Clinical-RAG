@@ -79,6 +79,7 @@ class TestIndexingRAGService:
 
         mk_settings: MockType = mocker.Mock(spec=Settings)
         mk_settings.milvus_collection_name = "collection_name"
+        mk_settings.openai_api_key = "fake_api_key"
 
         return IndexingService(
             chunker_service=mk_chunker_service,
