@@ -58,3 +58,19 @@ def get_indexing_service(
         indexing_agent=indexing_agent,
         settings=settings,
     )
+
+def get_indexing_service_manual() -> IndexingService:
+    chunker_service = get_chunker()
+    settings = get_app_settings()
+    embedding_service = get_embedding(settings)
+    tokenizer_service = get_tokenizer_service(settings)
+    vector_db_service = get_vector_client(embedding_service, tokenizer_service)
+    indexing_agent = get_indexing_agent()
+    return IndexingService(
+        chunker_service=chunker_service,
+        embedding_service=embedding_service,
+        vector_db_service=vector_db_service,
+        tokenizer_service=tokenizer_service,
+        indexing_agent=indexing_agent,
+        settings=settings,
+    )

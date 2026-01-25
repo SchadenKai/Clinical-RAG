@@ -11,19 +11,25 @@ async def simple_crawler(url: str) -> CrawlResult:
     browser_config = BrowserConfig()
     # TODO: configure this for CDC / WHO website
     run_config = CrawlerRunConfig(
-        cache_mode=CacheMode.ENABLED,  # Tag exclusions
-        excluded_tags=["form", "header", "footer", "nav"],
+        cache_mode=CacheMode.BYPASS,  # Tag exclusions
+        excluded_tags=[
+            "form",
+            "header",
+            "footer",
+            "nav",
+            "a",
+        ],
         target_elements=[
             "h1",
             "h2",
             "div.date",
             "article",
-            "a.visually-hidden-focusable",
         ],
         exclude_all_images=True,
         # Link filtering
         exclude_external_links=True,
         exclude_social_media_links=True,
+        exclude_internal_links=True,
         # Block entire domains
         exclude_domains=["adtrackers.com", "spammynews.org"],
         exclude_social_media_domains=["facebook.com", "twitter.com"],
