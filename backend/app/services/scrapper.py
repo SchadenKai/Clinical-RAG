@@ -107,6 +107,15 @@ async def structured_output_scrapper(url: str) -> CrawlResult:
             },
         ],
     }
+
+    schema = None
+    if "who" in url:
+        schema = who_schema
+    elif "/media/release" in url:
+        schema = cdc_news_schema
+    else:
+        schema = cdc_schema
+
     browser_config = BrowserConfig()
     run_config = CrawlerRunConfig(
         cache_mode=CacheMode.BYPASS,  # Tag exclusions
@@ -133,9 +142,7 @@ async def structured_output_scrapper(url: str) -> CrawlResult:
         exclude_social_media_domains=["facebook.com", "twitter.com"],
         # Media filtering
         exclude_external_images=True,
-        extraction_strategy=JsonCssExtractionStrategy(
-            schema=who_schema if ("who" in url) else cdc_schema
-        ),
+        extraction_strategy=JsonCssExtractionStrategy(schema=schema),
     )
 
     async with AsyncWebCrawler(config=browser_config) as crawler:

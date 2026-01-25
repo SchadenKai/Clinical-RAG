@@ -5,7 +5,7 @@ from crawl4ai import CrawlResult
 from langchain_core.documents import Document
 from langgraph.runtime import Runtime
 
-from app.services.scrapper import simple_crawler, structured_output_scrapper
+from app.services.scrapper import structured_output_scrapper
 
 from .context import AgentContext
 from .models import ProgressStatusEnum
