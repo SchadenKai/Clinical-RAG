@@ -45,6 +45,7 @@ class IndexingService:
             tokenizer=self.tokenizer_service,
             db_client=db_client,
             collection_name=collection_name,
+            settings=self.settings,
         )
         config: RunnableConfig = {"configurable": {"thread_id": request_id}}
         final_response = {}
@@ -52,6 +53,9 @@ class IndexingService:
             input=init_state, context=context, config=config
         ):
             for node_name, state in res.items():
+                # consideration for early outs
+                if "is_chunked_docs_empty" in node_name:
+                    final_response = state
                 if "indexing_node" in node_name:
                     state = cast(dict, state)
                     state.pop("final_documents")
