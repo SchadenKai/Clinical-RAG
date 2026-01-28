@@ -8,9 +8,9 @@ from .state import AgentState
 
 def is_file(
     state: AgentState,
-) -> Literal["pdf_scrapper_node", "web_scrapper"]:
+) -> Literal["file_ingestion_node", "web_scrapper"]:
     if state.file_key:
-        return "pdf_scrapper_node"
+        return "file_ingestion_node"
     return "web_scrapper"
 
 

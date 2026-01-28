@@ -41,7 +41,7 @@ def web_scrapper(state: AgentState) -> AgentState:
     }
 
 
-def pdf_scrapper_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
+def file_ingestion_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
     s3_client = runtime.context.s3_service.client
     temp_file = tempfile.NamedTemporaryFile(
         delete=False, suffix=Path(state.file_key).suffix
