@@ -1,9 +1,6 @@
 import asyncio
 import datetime
 import json
-import os
-import tempfile
-from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from crawl4ai import CrawlResult
@@ -98,6 +95,8 @@ def metadata_builder_node(
     for i, doc in enumerate(state.chunked_documents):
         # hashing metadata
         cleaned_text = clean_chunk_content(doc.page_content)
+        doc.page_content = cleaned_text
+
         content_hash = hash_text(cleaned_text)
         duplicate = runtime.context.db_client.query(
             filter=f"content_hash  == '{content_hash}'",
