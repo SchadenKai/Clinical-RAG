@@ -1,5 +1,12 @@
 # Clinical-RAG: Verified Clinical Decision Support for CDC & WHO Guidelines
 
+> [!IMPORTANT]
+> **🚧 WORK IN PROGRESS:** This project is currently in active development. 
+> APIs, documentation, and architecture are subject to frequent, breaking changes. 
+> This repository is public for architectural demonstration and technical review purposes only.
+
+![Status: Under Development](https://img.shields.io/badge/Status-Under_Active_Development-orange?style=for-the-badge&logo=github)
+![Version: Pre-alpha](https://img.shields.io/badge/Version-0.1.0--alpha-blue?style=for-the-badge)
 [![License: BSL 1.1](https://img.shields.io/badge/License-BSL_1.1-red.svg)](LICENSE)
 [![Python 3.13+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Built with LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-orange)](https://github.com/langchain-ai/langgraph)
@@ -48,3 +55,10 @@ Designed as a high-performance microservice, this project demonstrates a "Produc
 - V1: End-to-end RAG with CDC/WHO citation enforcement (Current).
 - V2: Automated ingestion of MMWR weekly updates and document versioning.
 - V3: A/B testing framework for different retrieval strategies (Top-K vs. MMR).
+
+## 🛠 Current Progress (Iteration 1)
+- [x] Initial Architecture Design
+- [x] Vector Database Schema (Milvus)
+- [x] CDC/WHO Document Ingestion Pipeline
+- [x] Safety Router implementation
+- [x] Evaluation Harness (DeepEval integration)
