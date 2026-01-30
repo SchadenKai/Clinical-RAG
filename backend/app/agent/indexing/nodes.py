@@ -8,7 +8,7 @@ from langchain_core.documents import Document
 from langgraph.runtime import Runtime
 
 from app.services.file_store.context_manager import FileProcessor
-from app.services.scrapper import pdf_scrapper, structured_output_scrapper
+from app.services.scrapper import document_extractor, structured_output_scrapper
 
 from .context import AgentContext
 from .models import ProgressStatusEnum, SourceClass
@@ -45,7 +45,7 @@ def file_ingestion_node(
     with FileProcessor(
         runtime.context.s3_service, state.file_key, runtime.context.settings
     ) as file_path:
-        content = pdf_scrapper(file_path)
+        content = document_extractor(file_path)
 
     doc = Document(
         page_content=content.export_to_markdown(),

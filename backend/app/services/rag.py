@@ -19,7 +19,7 @@ from app.rag.embeddings import EmbeddingService
 from app.services.file_store.db import S3Service
 from app.services.llm.factory import ChatModelService
 from app.services.llm.tokenizer import TokenizerService
-from app.services.scrapper import pdf_scrapper
+from app.services.scrapper import document_extractor
 
 
 class IndexingService:
@@ -77,7 +77,7 @@ class IndexingService:
         with temp_file as file:
             s3_client.download_fileobj(self.settings.minio_bucket_name, file_key, file)
 
-        content = pdf_scrapper(temp_file_path)
+        content = document_extractor(temp_file_path)
 
         if temp_file_path.exists():
             os.remove(temp_file_path)

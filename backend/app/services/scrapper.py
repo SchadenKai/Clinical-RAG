@@ -46,7 +46,7 @@ async def simple_crawler(url: str) -> CrawlResult:
         return res
 
 
-def pdf_scrapper(path: Path) -> DoclingDocument:
+def document_extractor(path: Path) -> DoclingDocument:
     doc_converter = DocumentConverter()
     return doc_converter.convert(path).document
 
