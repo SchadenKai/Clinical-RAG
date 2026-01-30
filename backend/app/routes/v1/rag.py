@@ -1,9 +1,14 @@
 from typing import Annotated, Optional
 
+from deepeval.test_case import LLMTestCase
 from fastapi import APIRouter, Depends, UploadFile
 
 # INDEXING AGENT deps
+from app.routes.dependencies.data_generator import get_synthetic_data_generator
+from app.routes.dependencies.evaluator import get_evaluation_pipeline
 from app.routes.dependencies.rag import get_indexing_service, get_retrieval_service
+from app.services.evaluation.dataset import SyntheticDataGenerator
+from app.services.evaluation.evaluator import EvaluationPipeline
 from app.services.rag import IndexingService, RetrievalService
 from app.utils import get_request_id
 
@@ -66,3 +71,47 @@ def retrieve_documents(
         is_llm_enabled=is_llm_enabled,
         request_id=request_id,
     )
+
+
+#### API FOR TESTING ONLY #### 
+# TODO: remove this later after integrating this into the evaluation pipeline
+
+@rag_router.post("/evaluate")
+def evaluate_rag_system(
+    evaluation_pipeline: Annotated[
+        EvaluationPipeline, Depends(get_evaluation_pipeline)
+    ],
+):
+    faithfulness_test_cases = [
+        # TEST CASE 1: The "Invented Cure" (Hallucination)
+        # Scenario: The context mentions prevention, but the model invents a cure.
+        LLMTestCase(
+            input="What is the recommended treatment for the new 'Zeta' variant?",
+            # The model answers confidently with a specific drug not in the context.
+            actual_output="The CDC recommends immediate administration of Hydroxy-Zeta-Mectin for all patients.",
+            retrieval_context=[
+                "The 'Zeta' variant is currently under investigation. No specific antiviral treatments have yet been approved for this specific variant. Supportive care is recommended."
+            ],
+            expected_output="There are no specific antiviral treatments approved yet; supportive care is recommended.",
+        ),
+        # TEST CASE 2: The "Contradiction"
+        # Scenario: The model gives advice directly opposite to the WHO guidelines in the context.
+        LLMTestCase(
+            input="Is the malaria vaccine recommended for travelers to Country X?",
+            actual_output="No, the malaria vaccine is generally not needed for travelers to Country X.",
+            retrieval_context=[
+                "WHO designates Country X as a high-risk zone. The RTS,S/AS01 malaria vaccine is strongly recommended for all travelers entering the region."
+            ],
+            expected_output="Yes, the WHO strongly recommends the vaccine for travelers to Country X.",
+        ),
+    ]
+    return evaluation_pipeline.evaluate(faithfulness_test_cases)
+
+
+@rag_router.post("/generate/golden")
+def generate_golden_dataset(
+    synthetic_data_generator: Annotated[
+        SyntheticDataGenerator, Depends(get_synthetic_data_generator)
+    ],
+):
+    return synthetic_data_generator.generate()
