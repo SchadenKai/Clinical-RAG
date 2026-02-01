@@ -7,7 +7,7 @@ from crawl4ai import CrawlResult
 from langchain_core.documents import Document
 from langgraph.runtime import Runtime
 
-from app.services.file_store.context_manager import FileProcessor
+from app.services.file_store.context_manager import S3FileStager
 from app.services.scrapper import document_extractor, structured_output_scrapper
 
 from .context import AgentContext
@@ -42,7 +42,7 @@ def web_scrapper(state: AgentState) -> AgentState:
 def file_ingestion_node(
     state: AgentState, runtime: Runtime[AgentContext]
 ) -> AgentState:
-    with FileProcessor(
+    with S3FileStager(
         runtime.context.s3_service, state.file_key, runtime.context.settings
     ) as file_path:
         content = document_extractor(file_path)

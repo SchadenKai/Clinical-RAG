@@ -6,7 +6,7 @@ from deepeval.synthesizer import Synthesizer
 from deepeval.synthesizer.config import ContextConstructionConfig
 
 from app.core.config import Settings
-from app.services.file_store.context_manager import FileProcessor
+from app.services.file_store.context_manager import S3FileStager
 from app.services.file_store.db import S3Service
 
 
@@ -62,7 +62,7 @@ class SyntheticDataGenerator:
             return file_keys
 
         for file_key in file_keys:
-            with FileProcessor(
+            with S3FileStager(
                 s3_service=self.s3_service, file_key=file_key, settings=self.settings
             ) as file_path:
                 results = self.synthesizer.generate_goldens_from_docs(

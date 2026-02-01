@@ -8,7 +8,7 @@ from app.core.config import Settings
 from app.services.file_store.db import S3Service
 
 
-class FileProcessor:
+class S3FileStager:
     """
     Used to create a temporary file and download the target file from Minio to the
     temporary file to be able to have a exposable path for scrappers and
