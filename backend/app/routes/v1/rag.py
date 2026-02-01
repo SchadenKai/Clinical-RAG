@@ -88,21 +88,37 @@ def evaluate_rag_system(
         LLMTestCase(
             input="What is the recommended treatment for the new 'Zeta' variant?",
             # The model answers confidently with a specific drug not in the context.
-            actual_output="The CDC recommends immediate administration of Hydroxy-Zeta-Mectin for all patients.",
+            actual_output=(
+                "The CDC recommends immediate administration of "
+                "Hydroxy-Zeta-Mectin for all patients."
+            ),
             retrieval_context=[
-                "The 'Zeta' variant is currently under investigation. No specific antiviral treatments have yet been approved for this specific variant. Supportive care is recommended."
+                "The 'Zeta' variant is currently under investigation. No "
+                "specific antiviral treatments have yet been approved for "
+                "this specific variant. Supportive care is recommended."
             ],
-            expected_output="There are no specific antiviral treatments approved yet; supportive care is recommended.",
+            expected_output=(
+                "There are no specific antiviral treatments approved yet; "
+                "supportive care is recommended."
+            ),
         ),
         # TEST CASE 2: The "Contradiction"
         # Scenario: The model gives advice directly opposite to the WHO guidelines in the context.
         LLMTestCase(
             input="Is the malaria vaccine recommended for travelers to Country X?",
-            actual_output="No, the malaria vaccine is generally not needed for travelers to Country X.",
+            actual_output=(
+                "No, the malaria vaccine is generally not needed for "
+                "travelers to Country X."
+            ),
             retrieval_context=[
-                "WHO designates Country X as a high-risk zone. The RTS,S/AS01 malaria vaccine is strongly recommended for all travelers entering the region."
+                "WHO designates Country X as a high-risk zone. The "
+                "RTS,S/AS01 malaria vaccine is strongly recommended for "
+                "all travelers entering the region."
             ],
-            expected_output="Yes, the WHO strongly recommends the vaccine for travelers to Country X.",
+            expected_output=(
+                "Yes, the WHO strongly recommends the vaccine for "
+                "travelers to Country X."
+            ),
         ),
     ]
     return evaluation_pipeline.evaluate(faithfulness_test_cases)
