@@ -1,11 +1,10 @@
 import os
 from pathlib import Path
-from tempfile import NamedTemporaryFile, SpooledTemporaryFile
+from tempfile import NamedTemporaryFile
 
 from types_boto3_s3 import S3Client
 
 from app.core.config import Settings
-from app.logger import app_logger
 from app.services.file_store.db import S3Service
 
 

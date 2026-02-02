@@ -36,6 +36,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     embedding_service = get_embedding(settings)
     embedding_service.test_client_on_startup()
 
+    app_logger.info("Verifying Pytorch CUDA Installation")
+    app_logger.info(f"Pytorch version: {torch.__version__}")
+    app_logger.info(
+        f"CUDA available: {torch.cuda.is_available()} version: {torch.version.cuda}"
+    )
+    app_logger.info(
+        "GPU device: "
+        f"{torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'None'}"
+    )
     yield
 
 
