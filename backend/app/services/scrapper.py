@@ -11,6 +11,8 @@ from crawl4ai import (
 from docling.document_converter import DocumentConverter
 from docling_core.types.doc.document import DoclingDocument
 
+from app.services.file_store.db import S3Service
+
 
 async def simple_crawler(url: str) -> CrawlResult:
     browser_config = BrowserConfig()
@@ -44,6 +46,52 @@ async def simple_crawler(url: str) -> CrawlResult:
     async with AsyncWebCrawler(config=browser_config) as crawler:
         res = await crawler.arun(url=url, config=run_config)
         return res
+
+
+async def who_pdf_list_scrapper(website_url: str) -> None:
+    browser_config = BrowserConfig()
+    who_guidelines = {
+        "name": "WHO Guidelines",
+        "baseSelector": "div.sf-publications-list",
+        "fields": [
+            {
+                "name": "files",
+                "selector": "div.sf-publications-item",
+                "type": "list",
+                "fields": [
+                    {
+                        "name": "title",
+                        "selector": "h3",
+                        "type": "text",
+                    },
+                    {
+                        "name": "publishing_date",
+                        "selector": "div.sf-publications-item__date",
+                        "type": "text",
+                    },
+                    {
+                        "name": "a.page-url",
+                        "selector": "div.sf-publications-item__header a",
+                        "type": "attribute",
+                        "attribute": "href"
+                    },
+                    {
+                        "name": "pdf_link",
+                        "selector": "a.download-url",
+                        "type": "attribute",
+                        "attribute": "href"
+                    },
+                ],
+            }
+        ],
+    }
+    run_config = CrawlerRunConfig(
+        cache_mode=CacheMode.BYPASS,
+        extraction_strategy=JsonCssExtractionStrategy(schema=who_guidelines),
+    )
+    async with AsyncWebCrawler(config=browser_config) as crawler:
+        response: CrawlResult = await crawler.arun(url=website_url, config=run_config)
+        return response.extracted_content
 
 
 def document_extractor(path: Path) -> DoclingDocument:
