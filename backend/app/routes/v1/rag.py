@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated, Optional
 
 from deepeval.test_case import LLMTestCase
@@ -10,6 +11,7 @@ from app.routes.dependencies.rag import get_indexing_service, get_retrieval_serv
 from app.services.evaluation.dataset import SyntheticDataGenerator
 from app.services.evaluation.evaluator import EvaluationPipeline
 from app.services.rag import IndexingService, RetrievalService
+from app.services.scrapper import who_pdf_list_scrapper
 from app.utils import get_request_id
 
 rag_router = APIRouter(prefix="/rag", tags=["rag"])
@@ -73,10 +75,11 @@ def retrieve_documents(
     )
 
 
-#### API FOR TESTING ONLY #### 
+#### API FOR TESTING ONLY ####
 # TODO: remove this later after integrating this into the evaluation pipeline
 
-@rag_router.post("/evaluate")
+
+@rag_router.post("/test/evaluate")
 def evaluate_rag_system(
     evaluation_pipeline: Annotated[
         EvaluationPipeline, Depends(get_evaluation_pipeline)
@@ -103,7 +106,8 @@ def evaluate_rag_system(
             ),
         ),
         # TEST CASE 2: The "Contradiction"
-        # Scenario: The model gives advice directly opposite to the WHO guidelines in the context.
+        # Scenario: The model gives advice directly opposite to the WHO guidelines
+        # in the context.
         LLMTestCase(
             input="Is the malaria vaccine recommended for travelers to Country X?",
             actual_output=(
@@ -124,10 +128,33 @@ def evaluate_rag_system(
     return evaluation_pipeline.evaluate(faithfulness_test_cases)
 
 
-@rag_router.post("/generate/golden")
+@rag_router.post("/test/generate/golden")
 def generate_golden_dataset(
     synthetic_data_generator: Annotated[
         SyntheticDataGenerator, Depends(get_synthetic_data_generator)
     ],
 ):
     return synthetic_data_generator.generate()
+
+
+@rag_router.post("/test/scrape")
+def simple_scrapping_test(
+    website_url: str,
+    indexing_service: Annotated[IndexingService, Depends(get_indexing_service)],
+) -> str:
+    return indexing_service.test_scrapping_and_extraction(website_url=website_url)
+
+
+@rag_router.post("/test/extract")
+def document_extrctor_test(
+    file: Optional[UploadFile],
+    indexing_service: Annotated[IndexingService, Depends(get_indexing_service)],
+    file_url: str | None = None,
+) -> str:
+    return indexing_service.test_doc_extraction(file.file, file.filename, file_url)
+
+
+@rag_router.post("/test/who_pdf_list_scrapper")
+def pdf_scrapper_test(website_url: str) -> str:
+    response = asyncio.run(who_pdf_list_scrapper(website_url))
+    return response

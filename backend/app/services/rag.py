@@ -1,8 +1,10 @@
+import asyncio
 import os
+import random
 import tempfile
 from pathlib import Path
 from tempfile import SpooledTemporaryFile
-from typing import cast
+from typing import BinaryIO, cast
 
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph.state import CompiledStateGraph
@@ -16,10 +18,11 @@ from app.logger import app_logger
 from app.rag.chunker import ChunkerService
 from app.rag.db import VectorClient
 from app.rag.embeddings import EmbeddingService
+from app.services.file_store.context_manager import FileStager
 from app.services.file_store.db import S3Service
 from app.services.llm.factory import ChatModelService
 from app.services.llm.tokenizer import TokenizerService
-from app.services.scrapper import document_extractor
+from app.services.scrapper import document_extractor, simple_crawler
 
 
 class IndexingService:
@@ -150,6 +153,29 @@ class IndexingService:
                     final_response = state
         return final_response
 
+    def test_scrapping_and_extraction(
+        self,
+        website_url: str,
+    ) -> str:
+        result = asyncio.run(simple_crawler(website_url))
+        result = result.html
+        file_name = f"test_{website_url}-{random.randint(1, 128)}"
+        with FileStager(filename=file_name, temp_file_content=result) as file_path:
+            result = document_extractor(file_path)
+        return result.export_to_markdown()
+
+    def test_doc_extraction(
+        self, file_name: str, file: BinaryIO | None = None, file_url: str | None = None
+    ) -> str:
+        if file_url:
+            result = document_extractor(file_url)
+        else:
+            with FileStager(
+                filename=file_name, temp_file_content=file.read()
+            ) as file_path:
+                result = document_extractor(file_path)
+        return result.export_to_markdown()
+
 
 class RetrievalService:
     def __init__(
@@ -159,8 +185,8 @@ class RetrievalService:
         embedding_service: EmbeddingService,
         vector_db_service: VectorClient,
         tokenizer_service: TokenizerService,
-        chat_model_service: ChatModelService,
         settings: Settings,
+        chat_model_service: ChatModelService,
     ):
         self.retriever_agent: CompiledStateGraph = retriever_agent
         self.chunker_service: ChunkerService = chunker_service
