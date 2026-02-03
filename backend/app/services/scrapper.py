@@ -11,8 +11,6 @@ from crawl4ai import (
 from docling.document_converter import DocumentConverter
 from docling_core.types.doc.document import DoclingDocument
 
-from app.services.file_store.db import S3Service
-
 
 async def simple_crawler(url: str) -> CrawlResult:
     browser_config = BrowserConfig()

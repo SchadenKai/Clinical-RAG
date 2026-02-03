@@ -1,3 +1,6 @@
+import json
+import threading
+
 from deepeval import evaluate
 from deepeval.evaluate.types import EvaluationResult
 from deepeval.metrics import (
@@ -68,10 +71,21 @@ class EvaluationPipeline:
             self._contextual_precision,
         )
 
+    def _store_eval_results_locally(self, results: EvaluationResult) -> None:
+        file_path = "app/data/reports/evaluation_report.json"
+        results = results.test_results
+
+        with open(file=file_path, mode="w") as json_file:
+            json.dump(results, json_file, indent=4)
+        return None
+
     def evaluate(self, test_cases: list[LLMTestCase]) -> EvaluationResult:
         metrics_list = list(self.metrics)
-
-        return evaluate(
+        results = evaluate(
             test_cases=test_cases,
             metrics=metrics_list,
         )
+        threading.Thread(
+            target=self._store_eval_results_locally, args=(results,)
+        ).start()
+        return results

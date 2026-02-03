@@ -1,3 +1,6 @@
+import json
+import threading
+
 from deepeval.dataset.golden import Golden
 from deepeval.models import DeepEvalBaseModel, GPTModel
 from deepeval.models.base_model import DeepEvalBaseEmbeddingModel
@@ -23,7 +26,7 @@ class SyntheticDataGenerator:
         if self._deepeval_model:
             return self._deepeval_model
         self._deepeval_model = GPTModel(
-            model=self.settings.llm_model_name,
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-fast",
             api_key=self.settings.llm_api_key,
             base_url="https://api.studio.nebius.ai/v1/",
         )
@@ -48,6 +51,13 @@ class SyntheticDataGenerator:
             model=self.deepeval_model, cost_tracking=True, async_mode=False
         )
         return self._synthesizer
+
+    def _store_dataset_locally(self, results: list[list[Golden]]) -> None:
+        file_path = "app/data/reports/synthetic_golden_dataset.json"
+
+        with open(file=file_path, mode="w") as json_file:
+            json.dump(results, json_file, indent=4)
+        return None
 
     def generate(self) -> list[Golden]:
         test_dataset = []
@@ -75,5 +85,7 @@ class SyntheticDataGenerator:
                     include_expected_output=True,
                 )
                 test_dataset.append(results)
-
+        threading.Thread(
+            target=self._store_dataset_locally, args=(test_dataset,)
+        ).start()
         return test_dataset
