@@ -23,12 +23,19 @@ class SyntheticDataGenerator:
 
     @property
     def deepeval_model(self) -> DeepEvalBaseModel:
+        """
+        Since we are using Nebius AI models with GPIModel API
+        it is important to specify the cost values so that
+        it will not introduce silent errors in deepeval.
+        """
         if self._deepeval_model:
             return self._deepeval_model
         self._deepeval_model = GPTModel(
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-fast",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct",
             api_key=self.settings.llm_api_key,
             base_url="https://api.studio.nebius.ai/v1/",
+            cost_per_input_token=0.02,
+            cost_per_output_token=0.06,
         )
         return self._deepeval_model
 
@@ -54,9 +61,11 @@ class SyntheticDataGenerator:
 
     def _store_dataset_locally(self, results: list[list[Golden]]) -> None:
         file_path = "app/data/reports/synthetic_golden_dataset.json"
-
+        flatten_goldens = [
+            golden.model_dump() for golden_list in results for golden in golden_list
+        ]
         with open(file=file_path, mode="w") as json_file:
-            json.dump(results, json_file, indent=4)
+            json.dump(flatten_goldens, json_file, indent=4)
         return None
 
     def generate(self) -> list[Golden]:
@@ -70,21 +79,25 @@ class SyntheticDataGenerator:
         )
         if file_keys == []:
             return file_keys
-
-        for file_key in file_keys:
-            with S3FileStager(
-                s3_service=self.s3_service, file_key=file_key, settings=self.settings
-            ) as file_path:
-                results = self.synthesizer.generate_goldens_from_docs(
-                    document_paths=[file_path.as_posix()],
-                    context_construction_config=ContextConstructionConfig(
-                        embedder=self.embedder,
-                        context_quality_threshold=0.0,
-                        critic_model=self.deepeval_model,
-                    ),
-                    include_expected_output=True,
-                )
-                test_dataset.append(results)
+        try:
+            for file_key in file_keys:
+                with S3FileStager(
+                    s3_service=self.s3_service,
+                    file_key=file_key,
+                    settings=self.settings,
+                ) as file_path:
+                    results = self.synthesizer.generate_goldens_from_docs(
+                        document_paths=[file_path.as_posix()],
+                        context_construction_config=ContextConstructionConfig(
+                            embedder=self.embedder,
+                            context_quality_threshold=0.0,
+                            critic_model=self.deepeval_model,
+                        ),
+                        include_expected_output=True,
+                    )
+                    test_dataset.append(results)
+        except Exception as e:
+            raise RuntimeError(f"Something went wrong during generation: {e}") from e
         threading.Thread(
             target=self._store_dataset_locally, args=(test_dataset,)
         ).start()
