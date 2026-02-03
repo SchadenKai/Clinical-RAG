@@ -31,7 +31,7 @@ class SyntheticDataGenerator:
         if self._deepeval_model:
             return self._deepeval_model
         self._deepeval_model = GPTModel(
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct",
+            model=self.settings.llm_model_name,
             api_key=self.settings.llm_api_key,
             base_url="https://api.studio.nebius.ai/v1/",
             cost_per_input_token=0.02,
@@ -62,7 +62,14 @@ class SyntheticDataGenerator:
     def _store_dataset_locally(self, results: list[list[Golden]]) -> None:
         file_path = "app/data/reports/synthetic_golden_dataset.json"
         flatten_goldens = [
-            golden.model_dump() for golden_list in results for golden in golden_list
+            {
+                "input": golden.input,
+                "expected_output": golden.expected_output,
+                "context": golden.context,
+                "additional_metadata": golden.additional_metadata,
+            }
+            for golden_list in results
+            for golden in golden_list
         ]
         with open(file=file_path, mode="w") as json_file:
             json.dump(flatten_goldens, json_file, indent=4)
@@ -92,7 +99,9 @@ class SyntheticDataGenerator:
                             embedder=self.embedder,
                             context_quality_threshold=0.0,
                             critic_model=self.deepeval_model,
+                            max_contexts_per_document=50,
                         ),
+                        max_goldens_per_context=10,
                         include_expected_output=True,
                     )
                     test_dataset.append(results)
