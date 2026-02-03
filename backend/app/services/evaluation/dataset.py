@@ -11,6 +11,7 @@ from deepeval.synthesizer.config import ContextConstructionConfig
 from app.core.config import Settings
 from app.services.file_store.context_manager import S3FileStager
 from app.services.file_store.db import S3Service
+from app.services.llm.calculate_cost import get_pricing_info
 
 
 class SyntheticDataGenerator:
@@ -30,12 +31,13 @@ class SyntheticDataGenerator:
         """
         if self._deepeval_model:
             return self._deepeval_model
+        output_price, input_price = get_pricing_info(self.settings.llm_model_name)
         self._deepeval_model = GPTModel(
             model=self.settings.llm_model_name,
             api_key=self.settings.llm_api_key,
             base_url="https://api.studio.nebius.ai/v1/",
-            cost_per_input_token=0.02,
-            cost_per_output_token=0.06,
+            cost_per_input_token=input_price,
+            cost_per_output_token=output_price,
         )
         return self._deepeval_model
 

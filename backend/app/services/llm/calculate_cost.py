@@ -37,3 +37,14 @@ def calculate_cost(
         total_cost = f"{total_cost:.10f}".rstrip("0").rstrip(".")
 
     return input_cost, output_cost, total_cost
+
+
+def get_pricing_info(model_name: str) -> tuple[str, str]:
+    pricing_info = model_pricing[model_name]
+    if pricing_info is None:
+        raise ValueError(
+            f"Pricing information for the given model {model_name} is not available"
+        )
+    output_price = pricing_info["output_price"]
+    input_price = pricing_info["input_price"]
+    return output_price, input_price
