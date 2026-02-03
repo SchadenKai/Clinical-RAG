@@ -25,7 +25,7 @@ async def lifespan(_: FastAPI) -> AsyncGenerator:
     # vector_db.delete_collection()
     vector_db.setup()
     vector_db.load_collection()
-    if settings.dev_mode:
+    if not settings.dev_mode:
         from app.routes.dependencies.embedding import get_embedding
         from app.routes.dependencies.llm import get_chat_model_service
 
