@@ -72,7 +72,6 @@ class IndexingService:
         )
 
     def ingest_document(self, file_key: str, request_id: str) -> IndexingAgentState:
-        collection_name = self.settings.milvus_collection_name
         db_client = self.vector_db_service.client
 
         init_state = IndexingAgentState(file_key=file_key)
@@ -83,7 +82,6 @@ class IndexingService:
             embedding=self.embedding_service,
             tokenizer=self.tokenizer_service,
             db_client=db_client,
-            collection_name=collection_name,
             settings=self.settings,
             s3_service=self.s3_service,
         )
@@ -107,7 +105,6 @@ class IndexingService:
         website_url: str,
         request_id: str,
     ) -> IndexingAgentState:
-        collection_name = self.settings.milvus_collection_name
         db_client = self.vector_db_service.client
 
         init_state = IndexingAgentState(website_url=website_url)
@@ -118,7 +115,6 @@ class IndexingService:
             embedding=self.embedding_service,
             tokenizer=self.tokenizer_service,
             db_client=db_client,
-            collection_name=collection_name,
             settings=self.settings,
             s3_service=self.s3_service,
         )

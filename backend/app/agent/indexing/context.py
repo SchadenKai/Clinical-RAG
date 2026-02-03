@@ -14,7 +14,6 @@ class AgentContext(BaseModel):
     s3_service: S3Service
     tokenizer: TokenizerService
     db_client: MilvusClient
-    collection_name: str
     settings: Settings
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
