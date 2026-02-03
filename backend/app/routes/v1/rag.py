@@ -53,14 +53,6 @@ def get_object_list(
     return indexing_service.get_object_list(file_name)
 
 
-@rag_router.post("/extract")
-def extract_md_content_from_file(
-    indexing_service: Annotated[IndexingService, Depends(get_indexing_service)],
-    file_key: str,
-):
-    return indexing_service.extract_md_content(file_key)
-
-
 @rag_router.post("/retrieve")
 def retrieve_documents(
     query: str,

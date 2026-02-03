@@ -71,22 +71,6 @@ class IndexingService:
             else []
         )
 
-    def extract_md_content(self, file_key: str) -> str:
-        s3_client = self.s3_service.client
-        temp_file = tempfile.NamedTemporaryFile(
-            delete=False, suffix=Path(file_key).suffix
-        )
-        temp_file_path = Path(temp_file.name)
-        with temp_file as file:
-            s3_client.download_fileobj(self.settings.minio_bucket_name, file_key, file)
-
-        content = document_extractor(temp_file_path)
-
-        if temp_file_path.exists():
-            os.remove(temp_file_path)
-
-        return content
-
     def ingest_document(self, file_key: str, request_id: str) -> IndexingAgentState:
         collection_name = self.settings.milvus_collection_name
         db_client = self.vector_db_service.client

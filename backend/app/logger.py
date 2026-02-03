@@ -1,7 +1,6 @@
 import logging
 from logging import StreamHandler
 
-
 logging.basicConfig(
     level=logging.INFO,
     format=(
