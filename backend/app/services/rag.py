@@ -1,8 +1,5 @@
 import asyncio
-import os
 import random
-import tempfile
-from pathlib import Path
 from tempfile import SpooledTemporaryFile
 from typing import BinaryIO, cast
 
