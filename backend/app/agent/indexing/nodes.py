@@ -68,7 +68,13 @@ def file_ingestion_node(
             "source_type": "file",
         },
     )
-
+    threading.Thread(
+        target=_store_report_locally,
+        args=(
+            doc,
+            "app/data/reports/scraped_data.json",
+        ),
+    ).run()
     return {
         "raw_document": [doc],
         "progress_status": ProgressStatusEnum.LOADING_FILE,
