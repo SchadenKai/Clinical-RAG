@@ -11,6 +11,7 @@ from app.routes.dependencies.rag import get_indexing_service, get_retrieval_serv
 from app.services.evaluation.dataset import SyntheticDataGenerator
 from app.services.evaluation.evaluator import EvaluationPipeline
 from app.services.rag import IndexingService, RetrievalService
+from pydantic import BaseModel
 from app.services.scrapper import who_pdf_list_scrapper
 from app.utils import get_request_id
 
@@ -71,53 +72,29 @@ def retrieve_documents(
 # TODO: remove this later after integrating this into the evaluation pipeline
 
 
+class EvaluationRequestBody(BaseModel):
+    user_input: str
+    actual_output: str
+    retrieved_context: list[str]
+    expected_output: str
+    expected_contexts: list[str]
+
+
 @rag_router.post("/test/evaluate")
 def evaluate_rag_system(
+    request: EvaluationRequestBody,
     evaluation_pipeline: Annotated[
         EvaluationPipeline, Depends(get_evaluation_pipeline)
     ],
 ):
-    faithfulness_test_cases = [
-        # TEST CASE 1: The "Invented Cure" (Hallucination)
-        # Scenario: The context mentions prevention, but the model invents a cure.
-        LLMTestCase(
-            input="What is the recommended treatment for the new 'Zeta' variant?",
-            # The model answers confidently with a specific drug not in the context.
-            actual_output=(
-                "The CDC recommends immediate administration of "
-                "Hydroxy-Zeta-Mectin for all patients."
-            ),
-            retrieval_context=[
-                "The 'Zeta' variant is currently under investigation. No "
-                "specific antiviral treatments have yet been approved for "
-                "this specific variant. Supportive care is recommended."
-            ],
-            expected_output=(
-                "There are no specific antiviral treatments approved yet; "
-                "supportive care is recommended."
-            ),
-        ),
-        # TEST CASE 2: The "Contradiction"
-        # Scenario: The model gives advice directly opposite to the WHO guidelines
-        # in the context.
-        LLMTestCase(
-            input="Is the malaria vaccine recommended for travelers to Country X?",
-            actual_output=(
-                "No, the malaria vaccine is generally not needed for "
-                "travelers to Country X."
-            ),
-            retrieval_context=[
-                "WHO designates Country X as a high-risk zone. The "
-                "RTS,S/AS01 malaria vaccine is strongly recommended for "
-                "all travelers entering the region."
-            ],
-            expected_output=(
-                "Yes, the WHO strongly recommends the vaccine for "
-                "travelers to Country X."
-            ),
-        ),
-    ]
-    return evaluation_pipeline.evaluate(faithfulness_test_cases)
+    test_case = LLMTestCase(
+        input=request.user_input,
+        actual_output=request.actual_output,
+        context=request.expected_contexts,
+        retrieval_context=request.retrieved_context,
+        expected_output=request.expected_output,
+    )
+    return evaluation_pipeline.evaluate([test_case])
 
 
 @rag_router.post("/test/generate/golden")

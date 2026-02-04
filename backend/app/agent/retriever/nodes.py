@@ -19,7 +19,7 @@ from .prompts import (
 )
 from .state import AgentState
 
-_SAFETY_CLASSIFICATION_THRESHOLD = 0.5
+_SAFETY_CLASSIFICATION_THRESHOLD = 0.3
 
 
 def safety_classifier_node(

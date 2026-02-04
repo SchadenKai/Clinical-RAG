@@ -102,6 +102,8 @@ class SyntheticDataGenerator:
                             context_quality_threshold=0.0,
                             critic_model=self.deepeval_model,
                             max_contexts_per_document=50,
+                            chunk_overlap=self.settings.chunk_overlap,
+                            chunk_size=self.settings.chunk_size,
                         ),
                         max_goldens_per_context=10,
                         include_expected_output=True,
