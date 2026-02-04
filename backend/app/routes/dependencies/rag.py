@@ -44,6 +44,25 @@ def get_retrieval_service(
     )
 
 
+def get_retriever_service_manual() -> RetrievalService:
+    chunker_service = get_chunker()
+    settings = get_app_settings()
+    tokenizer = get_tokenizer_service(settings)
+    embedding_service = get_embedding(settings)
+    vector_db = get_vector_client(embedding_service, tokenizer)
+    chat_model_service = get_chat_model_service(settings)
+    retriever_agent = get_retriever_agent()
+    return RetrievalService(
+        embedding_service=embedding_service,
+        vector_db_service=vector_db,
+        tokenizer_service=tokenizer,
+        chat_model_service=chat_model_service,
+        retriever_agent=retriever_agent,
+        chunker_service=chunker_service,
+        settings=settings,
+    )
+
+
 def get_indexing_service(
     chunker_service: Annotated[ChunkerService, Depends(get_chunker)],
     embedding_service: Annotated[EmbeddingService, Depends(get_embedding)],

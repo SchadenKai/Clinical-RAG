@@ -179,7 +179,6 @@ class RetrievalService:
         request_id: str,
         is_llm_enabled: bool = False,
     ) -> InferenceAgentState:
-        collection_name = self.settings.milvus_collection_name
         db_client = self.vector_db_service.client
         chat_model = self.chat_model_service.client
 
@@ -190,8 +189,8 @@ class RetrievalService:
             tokenizer=self.tokenizer_service,
             db_client=db_client,
             chat_model=chat_model,
-            collection_name=collection_name,
             include_generation=is_llm_enabled,
+            settings=self.settings,
         )
         config: RunnableConfig = {"configurable": {"thread_id": request_id}}
         final_response = {}

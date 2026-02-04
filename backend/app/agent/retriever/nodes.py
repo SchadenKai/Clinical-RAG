@@ -19,7 +19,7 @@ from .prompts import (
 )
 from .state import AgentState
 
-_SAFETY_CLASSIFICATION_THRESHOLD = 0.3
+_SAFETY_CLASSIFICATION_THRESHOLD = 0.5
 
 
 def safety_classifier_node(
@@ -101,7 +101,7 @@ def embed_query(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState
 def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
     if runtime.context.db_client is None:
         raise ValueError("Missing vector database client")
-    if runtime.context.collection_name is None:
+    if runtime.context.settings.milvus_collection_name is None:
         raise ValueError("Collection name cannot be none")
     if state.embedded_query is None or not isinstance(state.embedded_query, list):
         raise ValueError(
@@ -110,8 +110,9 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
     if isinstance(state.embedded_query[0], float):
         state.embedded_query = [state.embedded_query]
     start_time = time.time()
+    runtime.context.db_client.use_database(runtime.context.settings.milvus_db_name)
     res = runtime.context.db_client.search(
-        collection_name=runtime.context.collection_name,
+        collection_name=runtime.context.settings.milvus_collection_name,
         anns_field="vector",
         data=state.embedded_query,
         output_fields=["text", "category", "source"],
