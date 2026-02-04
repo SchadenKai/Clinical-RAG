@@ -1,0 +1,41 @@
+[
+    {
+        "input_query": "Enumerate WHO infertility guideline components and specify which section addresses male diagnostic protocols.",
+        "final_answer": "The WHO\u202fInfertility guideline is organized around three core components\u202f\u2014\u202fprevention, diagnosis and treatment of infertility\u30100\u3011(https://apps.who.int/iris/handle/10665/366700).  \n\nThe part of the guideline that deals specifically with how male infertility is diagnosed is found in the section titled **\u201cSpecific diagnoses of infertility (male)\u201d** (Fig.\u202fA1.2), which appears in the male\u2011diagnostic portion of the document\u30102\u3011(https://apps.who.int/iris/handle/10665/366700).",
+        "documents": [
+            {
+                "source": "9789240115774-eng.pdf",
+                "text": "Guideline for the prevention, diagnosis and treatment of infertility",
+                "score": 86.2025797367096,
+                "id": 463843575446391948
+            },
+            {
+                "source": "9789240115774-eng.pdf",
+                "text": "1. Infertility prevalence estimates: 1990-2021. Geneva: World Health Organization; 2023 (https://apps.who.int/iris/handle/10665/366700). 2. The selection and use of essential medicines 2023: web annex A: World Health Organization model list of essential medicines: 23rd list (2023). Geneva: World Health Organization; 2023 (https://iris.who.int/handle/10665/371090). 3. The selection and use of essential in vitro diagnostics: report of the fourth meeting of the WHO Strategic Advisory Group of Experts on In Vitro Diagnostics, 2022 (including the fourth WHO model list of essential in vitro diagnostics). Geneva: World Health Organization; 2023 (https://iris.who.int/handle/10665/373322). 4. Mburu G, Kiarie J, Allotey P. Towards a nuanced view and response to global fertility trends. Lancet. 2024;403(10440):1953-56 ( https://doi. org/10.1016/s0140-6736(24)00490-2). <!-- image --> ## Chapter ## 12 Research gaps, future scope and updating the guideline",
+                "score": 80.58260083198547,
+                "id": 463843575446392865
+            },
+            {
+                "source": "9789240115774-eng.pdf",
+                "text": "| Fig. 12.1. The need to address critical research gaps . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . | .204 | | Fig. 12.2. Future guideline scope and updates. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . | .205 | | Fig. A1.1. Causes of infertility. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . | .208 | | Fig. A1.2. Specific diagnoses of infertility (male) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . | . 210 |",
+                "score": 78.46087217330933,
+                "id": 463843575446391968
+            }
+        ],
+        "sources": [
+            "9789240115774-eng.pdf",
+            "9789240115774-eng.pdf",
+            "9789240115774-eng.pdf"
+        ],
+        "run_metadata": {
+            "search_duration_ms": 22.28546142578125,
+            "token_count": 17,
+            "total_cost": 1.7000000000000001e-07,
+            "duration_ms": 1741.5080070495605,
+            "type": "embedding",
+            "event": "retrieval agent"
+        },
+        "safety_classification": "classification=<SafetyClassificationEnum.SAFE: 'Safe'> supporting_args=['Enumerate WHO infertility guideline components', 'specify which section addresses male diagnostic protocols'] confidence_score=0.97",
+        "is_verified_citations": true
+    }
+]

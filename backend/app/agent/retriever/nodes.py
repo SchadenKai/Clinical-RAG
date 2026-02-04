@@ -201,8 +201,10 @@ def citation_verification(state: AgentState) -> AgentState:
 def is_citation_correct(
     state: AgentState,
 ) -> Literal["final_report_generation", "__end__"]:
+    print(f"[DEBUG] Checking citation state: {state.is_verified_citations}")
     if state.is_verified_citations:
         return "__end__"
+    print(f"[DEBUG] The wrong citations: {state.wrong_citations}")
     return "final_report_generation"
 
 
