@@ -1,5 +1,3 @@
-import json
-import threading
 
 from deepeval.dataset.golden import Golden
 from deepeval.models import DeepEvalBaseModel, GPTModel

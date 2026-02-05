@@ -3,6 +3,7 @@ from typing import Annotated, Optional
 
 from deepeval.test_case import LLMTestCase
 from fastapi import APIRouter, Depends, UploadFile
+from pydantic import BaseModel
 
 # INDEXING AGENT deps
 from app.routes.dependencies.data_generator import get_synthetic_data_generator
@@ -11,7 +12,6 @@ from app.routes.dependencies.rag import get_indexing_service, get_retrieval_serv
 from app.services.evaluation.dataset import SyntheticDataGenerator
 from app.services.evaluation.evaluator import EvaluationPipeline
 from app.services.rag import IndexingService, RetrievalService
-from pydantic import BaseModel
 from app.services.scrapper import who_pdf_list_scrapper
 from app.utils import get_request_id
 

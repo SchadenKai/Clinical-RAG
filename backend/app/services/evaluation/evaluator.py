@@ -1,5 +1,3 @@
-import json
-import threading
 
 from deepeval import evaluate
 from deepeval.evaluate.types import EvaluationResult

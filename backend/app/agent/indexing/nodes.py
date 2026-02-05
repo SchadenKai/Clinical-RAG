@@ -1,7 +1,6 @@
 import asyncio
 import datetime
 import json
-import threading
 from zoneinfo import ZoneInfo
 
 from crawl4ai import CrawlResult
@@ -73,6 +72,20 @@ def chunker_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentStat
     docs = chunker.split_documents(state.raw_document)
 
     return {"chunked_documents": docs, "progress_status": ProgressStatusEnum.CHUNKING}
+
+
+def _source_metadata(website_url: str) -> SourceClass:
+    # category metadata
+    if website_url:
+        if SourceClass.WHO.value.lower() in website_url:
+            source_class = SourceClass.WHO
+        elif SourceClass.CDC.value.lower() in website_url:
+            source_class = SourceClass.CDC
+        else:
+            source_class = SourceClass.OTHERS
+    else:
+        source_class = SourceClass.OTHERS
+    return source_class
 
 
 def metadata_builder_node(
