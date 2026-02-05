@@ -71,13 +71,13 @@ async def who_pdf_list_scrapper(website_url: str) -> None:
                         "name": "a.page-url",
                         "selector": "div.sf-publications-item__header a",
                         "type": "attribute",
-                        "attribute": "href"
+                        "attribute": "href",
                     },
                     {
                         "name": "pdf_link",
                         "selector": "a.download-url",
                         "type": "attribute",
-                        "attribute": "href"
+                        "attribute": "href",
                     },
                 ],
             }

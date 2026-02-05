@@ -80,7 +80,7 @@ class EvaluationRequestBody(BaseModel):
     expected_contexts: list[str]
 
 
-@rag_router.post("/test/evaluate")
+@rag_router.post("/evaluate")
 def evaluate_rag_system(
     request: EvaluationRequestBody,
     evaluation_pipeline: Annotated[
@@ -97,33 +97,10 @@ def evaluate_rag_system(
     return evaluation_pipeline.evaluate([test_case])
 
 
-@rag_router.post("/test/generate/golden")
+@rag_router.post("/generate/golden")
 def generate_golden_dataset(
     synthetic_data_generator: Annotated[
         SyntheticDataGenerator, Depends(get_synthetic_data_generator)
     ],
 ):
     return synthetic_data_generator.generate()
-
-
-@rag_router.post("/test/scrape")
-def simple_scrapping_test(
-    website_url: str,
-    indexing_service: Annotated[IndexingService, Depends(get_indexing_service)],
-) -> str:
-    return indexing_service.test_scrapping_and_extraction(website_url=website_url)
-
-
-@rag_router.post("/test/extract")
-def document_extrctor_test(
-    file: Optional[UploadFile],
-    indexing_service: Annotated[IndexingService, Depends(get_indexing_service)],
-    file_url: str | None = None,
-) -> str:
-    return indexing_service.test_doc_extraction(file.file, file.filename, file_url)
-
-
-@rag_router.post("/test/who_pdf_list_scrapper")
-def pdf_scrapper_test(website_url: str) -> str:
-    response = asyncio.run(who_pdf_list_scrapper(website_url))
-    return response
