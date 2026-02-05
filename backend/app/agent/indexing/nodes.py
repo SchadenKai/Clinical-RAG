@@ -17,12 +17,6 @@ from .state import AgentState
 from .utils import clean_chunk_content, hash_text
 
 
-def _store_report_locally(docs: list[Document], file_path: str):
-    flattened_docs = [doc.model_dump() for doc in docs]
-    with open(file=file_path, mode="w") as file:
-        json.dump(flattened_docs, file, indent=4)
-
-
 def web_scrapper(state: AgentState) -> AgentState:
     results: CrawlResult = asyncio.run(structured_output_scrapper(state.website_url))
     results = json.loads(results.extracted_content)
@@ -38,14 +32,6 @@ def web_scrapper(state: AgentState) -> AgentState:
     )
     if results.get("tags"):
         doc.metadata["tags"] = [tag["name"] for tag in results["tags"]]
-
-    threading.Thread(
-        target=_store_report_locally,
-        args=(
-            doc,
-            "app/data/reports/scraped_data.json",
-        ),
-    ).run()
     return {
         "raw_document": [doc],
         "progress_status": ProgressStatusEnum.LOADING_FILE,
@@ -68,13 +54,6 @@ def file_ingestion_node(
             "source_type": "file",
         },
     )
-    threading.Thread(
-        target=_store_report_locally,
-        args=(
-            doc,
-            "app/data/reports/scraped_data.json",
-        ),
-    ).run()
     return {
         "raw_document": [doc],
         "progress_status": ProgressStatusEnum.LOADING_FILE,
@@ -94,20 +73,6 @@ def chunker_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentStat
     docs = chunker.split_documents(state.raw_document)
 
     return {"chunked_documents": docs, "progress_status": ProgressStatusEnum.CHUNKING}
-
-
-def _source_metadata(website_url: str) -> SourceClass:
-    # category metadata
-    if website_url:
-        if SourceClass.WHO.value.lower() in website_url:
-            source_class = SourceClass.WHO
-        elif SourceClass.CDC.value.lower() in website_url:
-            source_class = SourceClass.CDC
-        else:
-            source_class = SourceClass.OTHERS
-    else:
-        source_class = SourceClass.OTHERS
-    return source_class
 
 
 def metadata_builder_node(
@@ -153,13 +118,6 @@ def metadata_builder_node(
         ).value
 
         final_doc_list.append(doc)
-    threading.Thread(
-        target=_store_report_locally,
-        args=(
-            final_doc_list,
-            "app/data/reports/chunked_data.json",
-        ),
-    ).run()
     return state.model_copy(update={"chunked_documents": final_doc_list})
 
 

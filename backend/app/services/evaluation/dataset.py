@@ -61,22 +61,6 @@ class SyntheticDataGenerator:
         )
         return self._synthesizer
 
-    def _store_dataset_locally(self, results: list[list[Golden]]) -> None:
-        file_path = "app/data/reports/synthetic_golden_dataset.json"
-        flatten_goldens = [
-            {
-                "input": golden.input,
-                "expected_output": golden.expected_output,
-                "context": golden.context,
-                "additional_metadata": golden.additional_metadata,
-            }
-            for golden_list in results
-            for golden in golden_list
-        ]
-        with open(file=file_path, mode="w") as json_file:
-            json.dump(flatten_goldens, json_file, indent=4)
-        return None
-
     def generate(self) -> list[Golden]:
         test_dataset = []
         s3_client = self.s3_service.client
@@ -111,7 +95,4 @@ class SyntheticDataGenerator:
                     test_dataset.append(results)
         except Exception as e:
             raise RuntimeError(f"Something went wrong during generation: {e}") from e
-        threading.Thread(
-            target=self._store_dataset_locally, args=(test_dataset,)
-        ).start()
         return test_dataset
