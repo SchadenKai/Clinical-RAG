@@ -12,7 +12,7 @@ from app.routes.dependencies.rag import get_indexing_service, get_retrieval_serv
 from app.services.evaluation.dataset import SyntheticDataGenerator
 from app.services.evaluation.evaluator import EvaluationPipeline
 from app.services.rag import IndexingService, RetrievalService
-from app.services.scrapper import who_pdf_list_scrapper, who_pdf_url_list
+from app.services.scrapper import who_pdf_url_list
 from app.utils import get_request_id
 
 rag_router = APIRouter(prefix="/rag", tags=["rag"])

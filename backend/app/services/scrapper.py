@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import cast
 
 from crawl4ai import (
     AsyncWebCrawler,
@@ -12,7 +11,6 @@ from crawl4ai import (
 from docling.document_converter import DocumentConverter
 from docling_core.types.doc.document import DoclingDocument
 from playwright.async_api import async_playwright
-from playwright.async_api._generated import Locator
 
 
 async def simple_crawler(url: str) -> CrawlResult:
