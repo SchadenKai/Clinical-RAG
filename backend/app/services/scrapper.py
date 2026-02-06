@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import cast
 
 from crawl4ai import (
     AsyncWebCrawler,
@@ -10,6 +11,8 @@ from crawl4ai import (
 )
 from docling.document_converter import DocumentConverter
 from docling_core.types.doc.document import DoclingDocument
+from playwright.async_api import async_playwright
+from playwright.async_api._generated import Locator
 
 
 async def simple_crawler(url: str) -> CrawlResult:
@@ -44,6 +47,47 @@ async def simple_crawler(url: str) -> CrawlResult:
     async with AsyncWebCrawler(config=browser_config) as crawler:
         res = await crawler.arun(url=url, config=run_config)
         return res
+
+
+async def who_pdf_url_list(website_url: str) -> set:
+    pdf_download_url = set()
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=False)
+        page = await browser.new_page()
+        await page.goto(website_url)
+
+        while True:
+            print("[DEBUG] Gathering button hrefs")
+            buttons_href: list[str | None] | None = await page.get_by_label(
+                "Download"
+            ).evaluate_all("el => el.map(e => e.getAttribute('href')).filter(h => h)")
+
+            if buttons_href is None or buttons_href == []:
+                next_page_btn = page.get_by_label("Go to the next page").first
+                print("[DEBUG] Navigating to the next page")
+                if (
+                    not await next_page_btn.is_visible()
+                    and await next_page_btn.is_disabled()
+                ):
+                    print("[DEBUG] Exiting")
+                    break
+                await next_page_btn.click()
+
+            pdf_download_url.update(buttons_href)
+
+            next_page_btn = page.get_by_label("Go to the next page").first
+            print("[DEBUG] Navigating to the next page")
+            if (
+                not await next_page_btn.is_visible()
+                and await next_page_btn.is_disabled()
+            ):
+                print("[DEBUG] Exiting")
+                break
+            await next_page_btn.click()
+            await page.wait_for_load_state("domcontentloaded")
+
+        await browser.close()
+    return pdf_download_url
 
 
 async def who_pdf_list_scrapper(website_url: str) -> None:
