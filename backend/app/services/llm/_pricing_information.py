@@ -354,6 +354,12 @@ model_pricing = {
         "batch_input_price": 0.01,
         "batch_output_price": 0.00,
     },
+    "MiniMaxAI/MiniMax-M2.1": {
+        "input_price": 0.30,
+        "output_price": 1.20,
+        "batch_input_price": 0.00,
+        "batch_output_price": 0.00,
+    },
     "microsoft/Phi-3.5-mini-instruct": {
         "input_price": 0.02,
         "output_price": 0.06,

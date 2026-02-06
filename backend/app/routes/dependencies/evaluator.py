@@ -11,3 +11,8 @@ def get_evaluation_pipeline(
     settings: Annotated[Settings, Depends(get_app_settings)],
 ) -> EvaluationPipeline:
     return EvaluationPipeline(settings=settings)
+
+
+def get_evaluation_pipeline_manual() -> EvaluationPipeline:
+    settings = get_app_settings()
+    return EvaluationPipeline(settings=settings)

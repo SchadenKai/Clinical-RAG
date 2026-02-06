@@ -169,27 +169,46 @@ def citation_verification(state: AgentState) -> AgentState:
         raise ValueError("The final answer cannot be empty")
     if state.sources is None:
         raise ValueError("Source list cannot be empty")
+    wrong_citations = []
+    is_verified_citation = True
+
+    if "【" in state.final_answer or "】" in state.final_answer:
+        wrong_citations.append("FORMAT_ERROR: Found invalid brackets 【 】")
+        is_verified_citation = False
 
     citation_pattern = r"\[([^\]]+)\]\(([^)]+)\)"
     citation_list: list[str, str] = re.findall(citation_pattern, state.final_answer)
-    # TODO: change this into a pydantic model instead
-    wrong_citations = []
-    is_verified_citation = True
+
     for citation in citation_list:
         if not citation[0].strip().isdigit():
-            wrong_citations.append(citation)
+            wrong_citations.append(
+                f"TYPE ERROR: Citation index in {citation} is not a digit "
+            )
             is_verified_citation = False
             continue
-        if not validators.url(citation[1]):
-            wrong_citations.append(citation)
+        if int(citation[0]) >= len(citation) or int(citation[0]) < 0:
+            wrong_citations.append(
+                f"INDEX ERROR: Citation index in {citation} is not the correct."
+                f"Citations: {state.sources}"
+                f"Documents: {state.documents}"
+            )
             is_verified_citation = False
             continue
         if state.sources[int(citation[0])] != citation[1]:
-            wrong_citations.append(citation)
+            wrong_citations.append(
+                f"INDEX ERROR: Reference link is not correct in {citation}"
+                f"Citations: {state.sources}"
+                f"Documents: {state.documents}"
+            )
             is_verified_citation = False
 
     if is_verified_citation:
-        return state
+        return state.model_copy(
+            update={
+                "is_verified_citations": is_verified_citation,
+                "wrong_citations": [""],
+            }
+        )
     return state.model_copy(
         update={
             "is_verified_citations": is_verified_citation,
@@ -204,6 +223,7 @@ def is_citation_correct(
     print(f"[DEBUG] Checking citation state: {state.is_verified_citations}")
     if state.is_verified_citations:
         return "__end__"
+    print(f"[DEBUG] The wrong citations: {state.final_answer}")
     print(f"[DEBUG] The wrong citations: {state.wrong_citations}")
     return "final_report_generation"
 

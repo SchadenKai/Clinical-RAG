@@ -70,7 +70,9 @@ class IndexingService:
         init_state = IndexingAgentState(file_key=file_key)
         context = IndexingAgentContext(
             chunker=self.chunker_service.get(
-                chunker_name="recursive", chunk_size=1021, chunk_overlap=10
+                chunker_name="recursive",
+                chunk_size=self.settings.chunk_size,
+                chunk_overlap=self.settings.chunk_overlap,
             ),
             embedding=self.embedding_service,
             tokenizer=self.tokenizer_service,
@@ -103,7 +105,9 @@ class IndexingService:
         init_state = IndexingAgentState(website_url=website_url)
         context = IndexingAgentContext(
             chunker=self.chunker_service.get(
-                chunker_name="recursive", chunk_size=1021, chunk_overlap=10
+                chunker_name="recursive",
+                chunk_size=self.settings.chunk_size,
+                chunk_overlap=self.settings.chunk_overlap,
             ),
             embedding=self.embedding_service,
             tokenizer=self.tokenizer_service,

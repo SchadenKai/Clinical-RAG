@@ -105,6 +105,8 @@ def metadata_builder_node(
         doc.page_content = cleaned_text
 
         content_hash = hash_text(cleaned_text)
+        doc.metadata["content_hash"] = content_hash
+
         runtime.context.db_client.use_database(runtime.context.settings.milvus_db_name)
         duplicate = runtime.context.db_client.query(
             filter=f"content_hash  == '{doc.metadata['content_hash']}'",
@@ -117,7 +119,6 @@ def metadata_builder_node(
                 f"chunk no. {i} from the list of chunks"
             )
             continue
-        doc.metadata["content_hash"] = content_hash
 
         doc.metadata["chunk_index"] = i
         doc.metadata["prev_chunk_id"] = i - 1 if i > 0 else 0
