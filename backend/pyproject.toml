@@ -58,9 +58,15 @@ url = "https://download.pytorch.org/whl/cu128"
 explicit = true
 
 [tool.uv.sources]
-torch = [{ index = "pytorch-cuda" }]
-torchaudio = [{ index = "pytorch-cuda" }]
-torchvision = [{ index = "pytorch-cuda" }]
+torch = [
+  { index = "pytorch-cuda", marker = "sys_platform != 'darwin'" }
+]
+torchaudio = [
+  { index = "pytorch-cuda", marker = "sys_platform != 'darwin'" }
+]
+torchvision = [
+  { index = "pytorch-cuda", marker = "sys_platform != 'darwin'" }
+]
 
 
 [tool.mypy]
