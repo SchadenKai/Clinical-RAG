@@ -1,13 +1,12 @@
 import json
-from typing import cast
 
-from app.agent.retriever.state import AgentState
+from deepeval.evaluate.types import EvaluationResult
+from deepeval.test_case import LLMTestCase
+
 from app.routes.dependencies.evaluator import get_evaluation_pipeline_manual
 from app.routes.dependencies.rag import get_retriever_service_manual
 from app.utils import get_request_id
-from deepeval.test_case import LLMTestCase
 
-from deepeval.evaluate.types import EvaluationResult
 #### VIBE CODED ####
 
 
