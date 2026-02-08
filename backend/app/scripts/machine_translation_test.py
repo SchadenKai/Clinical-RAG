@@ -16,7 +16,9 @@ from deepeval.test_case import LLMTestCaseParams, LLMTestCase
 from deepeval.metrics.g_eval import Rubric
 from deepeval import evaluate
 from deepeval.evaluate.types import EvaluationResult
+from deepeval.models import DeepEvalBaseModel, GPTModel
 
+from app.services.llm.calculate_cost import get_pricing_info
 
 # document parsing
 # chunking
@@ -59,6 +61,13 @@ You will be provided with three specific blocks of text:
 2. <target_chunk>: The specific text you must translate.
 3. <next_context>: The text immediately following the target chunk.
 
+# Reasoning Process (Chain of Thought)
+Before generating the final translation, you must perform the following analysis step-by-step:
+1. **Analyze Context**: Look at <previous_context> to identify the subject of the sentence, gender/number of nouns, and specific terminology already used.
+2. **Resolve Ambiguities**: If <target_chunk> contains pronouns (e.g., "it", "they"), determine what they refer to based on the previous context.
+3. **Check Boundaries**: Look at <next_context>. Ensure your translation ends with a grammatical structure that flows naturally into the start of the next chunk.
+4. **Isolate Content**: Confirm exactly where <target_chunk> starts and ends to ensure no content from the context is accidentally translated.
+
 # Strict Instructions
 1. **Translate ONLY the <target_chunk>**: Do not translate the previous or next context. They are provided solely for your reference to understand the narrative flow.
 2. **Contextual Continuity**:
@@ -75,6 +84,11 @@ Next Chunk(optional): {next_chunk}
 
 Current Language: {current_language}
 Target Language: {target_language}
+"""
+
+RETRY_PROMPT = """
+Retry based strictly on the given feedback:
+{feedback}
 """
 
 EVALUATOR_PROMPT = """
@@ -98,39 +112,35 @@ You must score the translation on a scale of 1 to 5 based on the following dimen
 
 3.  **Format Preservation**:
     - Are Markdown tags, code blocks, or special characters preserved exactly?
-
-# Scoring Rubric (1-5)
-- **5 (Perfect):** Flawless translation. Grammatically perfectly aligned with previous/next contexts. Terminology is precise.
-- **4 (Good):** Meaning is accurate, but minor stylistic friction with the context (e.g., a slightly awkward transition).
-- **3 (Acceptable):** Meaning is preserved, but context cues were missed (e.g., used "it" generically instead of the specific gender implied by previous text).
-- **2 (Poor):** Significant meaning errors or the translation makes the combined sentence (chunk + next) grammatically incorrect.
-- **1 (Fail):** Hallucination, missing translation, or broken formatting.
 """
 translation_rubric = [
     Rubric(
-        score=1,
-        criteria="The translation is missing, irrelevant, or purely hallucinates information not present in the source chunk.",
+        score_range=(0, 2),
+        expected_outcome="The translation is missing, irrelevant, or purely hallucinates information not present in the source chunk.",
     ),
     Rubric(
-        score=2,
-        criteria="The translation conveys general meaning but fails grammatically due to ignoring the 'previous_context' (e.g., wrong gender/number) or breaks the syntax of the 'next_context'.",
+        score_range=(3, 5),
+        expected_outcome="The translation conveys general meaning but fails grammatically due to ignoring the 'previous_context' (e.g., wrong gender/number) or breaks the syntax of the 'next_context'.",
     ),
     Rubric(
-        score=3,
-        criteria="The translation is accurate in isolation but creates a slightly awkward or unnatural transition with the surrounding text chunks.",
+        score_range=(6, 7),
+        expected_outcome="The translation is accurate in isolation but creates a slightly awkward or unnatural transition with the surrounding text chunks.",
     ),
     Rubric(
-        score=4,
-        criteria="The translation is accurate and grammatically correct within the context, with only very minor stylistic friction.",
+        score_range=(8, 9),
+        expected_outcome="The translation is accurate and grammatically correct within the context, with only very minor stylistic friction.",
     ),
     Rubric(
-        score=5,
-        criteria="The translation is flawless. It perfectly respects the gender/number from the previous context, flows seamlessly into the next context, and preserves all formatting.",
+        score_range=(10, 10),
+        expected_outcome="The translation is flawless. It perfectly respects the gender/number from the previous context, flows seamlessly into the next context, and preserves all formatting.",
     ),
 ]
 
 
 class TranslatedChunk(BaseModel):
+    thought_process: str = Field(
+        description="Analysis of the context, pronouns, and sentence flow boundaries."
+    )
     translation: str = Field(description="The translation of the target chunk")
     confidence_score: float = Field(
         description="Score from 0.0 to 1.0 on how confident you are in your translation"
@@ -138,7 +148,17 @@ class TranslatedChunk(BaseModel):
     reasoning: str = Field(description="Reasoning for the confidence score value given")
 
 
-final_translation = ""
+_EVALUATOR_MODEL = "meta-llama/Llama-3.3-70B-Instruct-fast"
+_TRANSLATOR_MODEL = "Qwen/Qwen3-235B-A22B-Instruct-2507"
+
+output_price, input_price = get_pricing_info(_EVALUATOR_MODEL)
+DEEPEVAL_MODEL = GPTModel(
+    model=_EVALUATOR_MODEL,
+    api_key=settings.llm_api_key,
+    base_url="https://api.studio.nebius.ai/v1/",
+    cost_per_input_token=input_price,
+    cost_per_output_token=output_price,
+)
 
 
 def evaluate_translation(result: str, messages: list[BaseMessage]) -> EvaluationResult:
@@ -147,7 +167,8 @@ def evaluate_translation(result: str, messages: list[BaseMessage]) -> Evaluation
         criteria=EVALUATOR_PROMPT,
         evaluation_params=[LLMTestCaseParams.ACTUAL_OUTPUT, LLMTestCaseParams.INPUT],
         rubric=translation_rubric,
-        threshold=4
+        threshold=0.7,
+        model=DEEPEVAL_MODEL,
     )
     test_case = LLMTestCase(input=str(messages), actual_output=result)
     return evaluate(test_cases=[test_case], metrics=[mt_evaluation])
@@ -156,42 +177,48 @@ def evaluate_translation(result: str, messages: list[BaseMessage]) -> Evaluation
 def translation(
     client: BaseChatModel,
     messages: list[BaseMessage],
-    is_confident: Optional[bool] = False,
 ) -> str:
     client = client.with_structured_output(schema=TranslatedChunk, strict=True)
-    while not is_confident:
-        print(is_confident)
-        results = client.invoke(input=messages)
-        results = cast(TranslatedChunk, results)
-        print(results)
-        if results.confidence_score < 0.7:
-            print(
-                f"[DEBUG] Confidence score too low ({results.confidence_score})"
-                f": Retrying... (reason:{results.reasoning})"
+    final_translation = ""
+    while True:
+        try:
+            results = client.invoke(input=messages)
+        except Exception as e:
+            raise RuntimeError(f"Something went wrong during invoke: {e}") from e
+
+        print(f"[DEBUG] Results: {str(results)}")
+
+        if results is None:
+            print("Translation results cannot be None, Retrying...")
+            continue
+
+        translation_results = cast(TranslatedChunk, results)
+        print(f"[DEBUG] Starting evaluation on {translation_results.translation}")
+        final_translation = translation_results.translation
+
+        eval_results = evaluate_translation(
+            result=translation_results.translation, messages=messages
+        )
+        eval_results = eval_results.test_results[0].metrics_data[0]
+        print(f"[DEBUG] Evaluation results: {eval_results.score}")
+        if not eval_results.success:
+            print(f"[DEBUG] Retrying due to reason: {eval_results.reason}")
+            messages.append(AIMessage(content=translation_results.translation))
+            messages.append(
+                HumanMessage(content=RETRY_PROMPT.format(feedback=eval_results.reason))
             )
-            messages.append(AIMessage(content=(results)))
-            messages.append(HumanMessage(content="Retry based on the given reasoning"))
-            is_confident = False
         else:
-            eval_results = evaluate_translation(results.translation, messages)
-            eval_results = eval_results.test_results[0].metrics_data[0]
-            if not eval_results.success:
-                messages.append(AIMessage(content=(results)))
-                messages.append(HumanMessage(content=eval_results.reason))
-                is_confident = False
-            else:
-                print(f"[DEBUG] Passed ({results.confidence_score})")
-                is_confident = True
-    return results.translation
+            print(f"[DEBUG] Passed ({eval_results.score})")
+            break
+
+    return final_translation
 
 
 messages_list: list[list[BaseMessage]] = []
 client_list: list[BaseChatModel] = []
 
 for _, doc in enumerate(final_docs):
-    client = ChatNebius(
-        model="meta-llama/Llama-3.3-70B-Instruct-fast", api_key=settings.llm_api_key
-    )
+    client = ChatNebius(model=_TRANSLATOR_MODEL, api_key=settings.llm_api_key)
 
     messages = [
         SystemMessage(content=TRANSLATION_PROMPT),
@@ -214,7 +241,7 @@ for _, doc in enumerate(final_docs):
     messages_list.append(messages)
 
 final_translation = ""
-with ThreadPoolExecutor(max_workers=10) as executor:
+with ThreadPoolExecutor(max_workers=20) as executor:
     results = executor.map(translation, client_list, messages_list)
 
     for result in results:

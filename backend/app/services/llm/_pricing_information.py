@@ -329,12 +329,30 @@ model_pricing = {
         "batch_input_price": 0.065,
         "batch_output_price": 0.20,
     },
+    "Qwen/Qwen3-235B-A22B-Instruct-2507": {
+        "input_price": 0.2,
+        "output_price": 0.60,
+        "batch_input_price": 0.2,
+        "batch_output_price": 0.60,
+    },
     # --- Other Nebius ---
     "mistralai/Mistral-Nemo-Instruct-2407": {
         "input_price": 0.08,
         "output_price": 0.24,
         "batch_input_price": 0.04,
         "batch_output_price": 0.12,
+    },
+    "openai/gpt-oss-120b": {
+        "input_price": 0.15,
+        "output_price": 0.60,
+        "batch_input_price": 0.15,
+        "batch_output_price": 0.60,
+    },
+    "meta-llama/Llama-3.3-70B-Instruct-fast": {
+        "input_price": 0.25,
+        "output_price": 0.75,
+        "batch_input_price": 0.25,
+        "batch_output_price": 0.75,
     },
     "google/gemma-2-9b-it": {
         "input_price": 0.03,
