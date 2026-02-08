@@ -261,6 +261,12 @@ model_pricing = {
         "batch_input_price": 0.40,
         "batch_output_price": 1.20,
     },
+    "deepseek-ai/DeepSeek-V3.2": {
+        "input_price": 0.30,
+        "output_price": 0.45,
+        "batch_input_price": 0.30,
+        "batch_output_price": 0.45,
+    },
     # --- Meta Llama ---
     "meta-llama/Meta-Llama-3.1-405B-Instruct": {
         "input_price": 1.00,
