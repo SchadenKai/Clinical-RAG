@@ -280,10 +280,17 @@ _MACHINE_TRANSLATION_EVALUATOR = GEval(
     model=DEEPEVAL_MODEL,
 )
 
+_EVALUATION_INPUT_TEMPLATE = """
+System Prompt: {system_prompt}
+Human Prompt: {user_query}
+"""
+
 
 def evaluate_translation(result: str, messages: list[BaseMessage]) -> EvaluationResult:
-    first_message: SystemMessage = messages[0]
-    test_case = LLMTestCase(input=first_message.content, actual_output=result)
+    first_message = _EVALUATION_INPUT_TEMPLATE.format(
+        system_prompt=messages[0].content, user_query=messages[1].content
+    )
+    test_case = LLMTestCase(input=first_message, actual_output=result)
     return evaluate(test_cases=[test_case], metrics=[_MACHINE_TRANSLATION_EVALUATOR])
 
 
@@ -354,7 +361,7 @@ for _, doc in enumerate(final_docs):
                 dynamic_summary=dynamic_summary if dynamic_summary else "",
                 target_chunk=doc.page_content,
                 current_language="english",
-                target_language="filipino",
+                target_language="spanish",
                 previous_chunk=final_docs[doc.metadata["previous_chunk_id"]]
                 if doc.metadata["previous_chunk_id"] != doc.metadata["current_chunk_id"]
                 else "",
@@ -378,7 +385,7 @@ with ThreadPoolExecutor(max_workers=20) as executor:
 print(final_translation)
 
 with open(
-    f"app/scripts/filipino{_TRANSLATOR_MODEL.replace('/', '_')}.md",
+    f"app/scripts/spanish{_TRANSLATOR_MODEL.replace('/', '_')}.md",
     mode="w",
     encoding="utf-8",
 ) as file:
