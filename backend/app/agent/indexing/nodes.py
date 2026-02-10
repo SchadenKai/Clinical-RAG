@@ -3,7 +3,6 @@ import datetime
 import json
 from zoneinfo import ZoneInfo
 
-from crawl4ai import CrawlResult
 from langchain_core.documents import Document
 from langgraph.runtime import Runtime
 
@@ -17,7 +16,7 @@ from .utils import clean_chunk_content, hash_text
 
 
 def web_scrapper(state: AgentState) -> AgentState:
-    results: CrawlResult = asyncio.run(structured_output_scrapper(state.website_url))
+    results = asyncio.run(structured_output_scrapper(state.website_url))
     results = json.loads(results.extracted_content)
     results: dict = results[0]
     doc = Document(

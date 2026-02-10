@@ -1,10 +1,10 @@
-
 from typing import Literal
 
 from langchain_text_splitters import (
+    CharacterTextSplitter,
     MarkdownTextSplitter,
     RecursiveCharacterTextSplitter,
-    SentenceTransformersTokenTextSplitter,
+    SpacyTextSplitter,
     TextSplitter,
 )
 
@@ -14,8 +14,9 @@ _CHUNKERS_NAME = Literal["semantic", "recursive", "markdown"]
 class ChunkerService:
     def __init__(self):
         self._chunkers: dict[_CHUNKERS_NAME, TextSplitter] = {
-            "semantic": SentenceTransformersTokenTextSplitter,
+            "semantic": SpacyTextSplitter,
             "recursive": RecursiveCharacterTextSplitter,
+            "character_based": CharacterTextSplitter,
             "markdown": MarkdownTextSplitter,
         }
 

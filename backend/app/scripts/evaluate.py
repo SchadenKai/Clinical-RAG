@@ -72,7 +72,10 @@ def generate_md_report(evaluation_result: EvaluationResult) -> str:
 
                 # Handling Verbose Logs
                 if metric.verbose_logs:
-                    md_output += "<details>\n<summary><strong>View Verbose Logs & Verdicts</strong></summary>\n\n"
+                    md_output += (
+                        "<details>\n<summary><strong>View Verbose Logs"
+                        " & Verdicts</strong></summary>\n\n"
+                    )
                     md_output += "```text\n"  # Using text/json
                     md_output += str(metric.verbose_logs)
                     md_output += "\n```\n"
@@ -82,7 +85,10 @@ def generate_md_report(evaluation_result: EvaluationResult) -> str:
         md_output += "## 📚 Retrieval Data\n\n"
 
         if test_result.retrieval_context:
-            md_output += "<details>\n<summary><strong>Retrieval Context (Chunks)</strong></summary>\n\n"
+            md_output += (
+                "<details>\n<summary><strong>Retrieval Context"
+                "(Chunks)</strong></summary>\n\n"
+            )
             for i, ctx in enumerate(test_result.retrieval_context):
                 md_output += f"**Chunk {i + 1}:**\n> {ctx}\n\n"
             md_output += "</details>\n\n"
