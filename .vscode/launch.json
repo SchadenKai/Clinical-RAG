@@ -16,6 +16,14 @@
             ],
             "jinja": false, 
             "justMyCode": false
+        },
+        {
+            "name": "Python Debugger: Module",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/backend",
+            "module": "app.scripts.test_docling",
+            "jinja": false, 
         }
     ]
 }
