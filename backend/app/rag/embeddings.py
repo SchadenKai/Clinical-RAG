@@ -5,6 +5,7 @@ from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
 from langchain_nebius.embeddings import NebiusEmbeddings
 from langchain_nomic.embeddings import NomicEmbeddings
 from langchain_openai.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 from app.core.config import Settings, settings
 from app.rag.models import EmbeddingResponseModel
@@ -39,6 +40,16 @@ class EmbeddingService:
                 self._client = NomicEmbeddings(**self.config)
             elif self.provider == "nebius":
                 self._client = NebiusEmbeddings(**self.config)
+            elif self.provider == "openrouter":
+                self._client = OpenAIEmbeddings(
+                    **self.config, base_url="https://openrouter.ai/api/v1"
+                )
+            elif self.provider == "huggingface":
+                # For HuggingFace, model is passed to model_name argument.
+                # Remove it from config first since HuggingFaceEmbeddings doesn't accept "model".
+                hf_config = dict(self.config)
+                model_n = hf_config.pop("model", None)
+                self._client = HuggingFaceEmbeddings(model_name=model_n, **hf_config)
             else:
                 self._client = OpenAIEmbeddings(**self.config)
         return self._client
@@ -59,7 +70,7 @@ class EmbeddingService:
         # TODO: Make this non IO blocking
         token_cnt = tokenizer.compute_token_cnt(text, is_embedding_model=True)
         _, _, total_cost = calculate_cost(
-            model_name=self.settings.bi_encoder_model,
+            model_name=self.settings.embedding_model,
             input_token=token_cnt,
         )
         return EmbeddingResponseModel(
@@ -83,7 +94,7 @@ class EmbeddingService:
         # TODO: Make this non IO blocking
         token_cnt = tokenizer.compute_token_cnt(documents, is_embedding_model=True)
         _, _, total_cost = calculate_cost(
-            model_name=self.settings.bi_encoder_model,
+            model_name=self.settings.embedding_model,
             input_token=token_cnt,
             is_batch=True,
         )
@@ -95,5 +106,3 @@ class EmbeddingService:
             duration_ms=duration_ms,
             event=event_name,
         )
-
-

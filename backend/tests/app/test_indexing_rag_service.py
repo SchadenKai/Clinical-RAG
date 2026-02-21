@@ -83,6 +83,9 @@ class TestIndexingRAGService:
         mk_settings: MockType = mocker.Mock(spec=Settings)
         mk_settings.milvus_collection_name = "collection_name"
         mk_settings.openai_api_key = "fake_api_key"
+        mk_settings.chunk_size = 1021
+        mk_settings.chunk_overlap = 10
+        mk_settings.embedding_model = "text-embedding-3-small"
 
         return IndexingService(
             chunker_service=mk_chunker_service,

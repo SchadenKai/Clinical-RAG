@@ -14,14 +14,14 @@ def get_embedding(
 ) -> EmbeddingService:
     # currently only designed for openai
     _config = {
-        "api_key": settings.llm_api_key,
-        "model": settings.bi_encoder_model,
+        "api_key": settings.embedding_api_key,
+        "model": settings.embedding_model,
         # "dimensions": settings.vector_dim,
         # "max_retries": 5,
         # "request_timeout": None,
     }
     return EmbeddingService(
-        provider=settings.llm_provider,
+        provider=settings.embedding_provider,
         config=_config,
         setting=settings,
     )

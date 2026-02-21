@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     # model config
     embedding_provider: str = os.environ.get("EMBEDDING_PROVIDER", "openai")
     embedding_api_key: str = os.environ.get("EMBEDDING_API_KEY", "")
-    bi_encoder_model: str = os.environ.get("BI_ENCODER_MODEL", "text-embedding-3-small")
+    embedding_model: str = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
 
     hf_api_key: str = os.environ.get("HUGGING_FACE_API_KEY", "")
 

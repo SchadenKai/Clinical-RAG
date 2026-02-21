@@ -3,6 +3,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_google_genai.chat_models import ChatGoogleGenerativeAI
 from langchain_nebius.chat_models import ChatNebius
 from langchain_openai import ChatOpenAI
+from langchain_openrouter import ChatOpenRouter
 
 from app.core.config import settings
 from app.logger import app_logger
@@ -34,6 +35,10 @@ class ChatModelService:
             )
         elif self.provider == "gemini":
             self._client = ChatGoogleGenerativeAI(
+                api_key=settings.llm_api_key, model=self.model_name
+            )
+        elif self.provider == "openrouter":
+            self._client = ChatOpenRouter(
                 api_key=settings.llm_api_key, model=self.model_name
             )
         else:

@@ -207,6 +207,39 @@ model_pricing = {
         "batch_output_price": 7.50,
     },
     # =========================================================================
+    # OPENROUTER ADDITIONS
+    # =========================================================================
+    "minimax/minimax-m2.5": {
+        "input_price": 0.30,
+        "output_price": 1.10,
+        "batch_input_price": 0.15,
+        "batch_output_price": 0.55,
+    },
+    "google/gemini-2.5-flash": {
+        "input_price": 0.075,
+        "output_price": 0.30,
+        "batch_input_price": 0.0375,
+        "batch_output_price": 0.15,
+    },
+    "deepseek/deepseek-v3.2": {
+        "input_price": 0.25,
+        "output_price": 0.38,
+        "batch_input_price": 0.125,
+        "batch_output_price": 0.19,
+    },
+    "mimo/mimo-v2-flash": {
+        "input_price": 0.20,
+        "output_price": 0.50,
+        "batch_input_price": 0.10,
+        "batch_output_price": 0.25,
+    },
+    "google/gemini-3-flash": {
+        "input_price": 0.10,
+        "output_price": 0.40,
+        "batch_input_price": 0.05,
+        "batch_output_price": 0.20,
+    },
+    # =========================================================================
     # GOOGLE GEMINI
     # Note: Vertex AI Batch Prediction often uses node-hour billing, not per-token.
     # Batch pricing is marked as None to avoid inaccurate estimates.
@@ -395,6 +428,51 @@ model_pricing = {
         "input_price": 0.01,
         "output_price": 0.00,
         "batch_input_price": 0.005,
+        "batch_output_price": 0.00,
+    },
+    # =========================================================================
+    # HUGGINGFACE EMBEDDINGS (Local)
+    # =========================================================================
+    "Alibaba-NLP/gte-Qwen2-7B-instruct": {
+        "input_price": 0.00,
+        "output_price": 0.00,
+        "batch_input_price": 0.00,
+        "batch_output_price": 0.00,
+    },
+    "nvidia/NV-Embed-v2": {
+        "input_price": 0.00,
+        "output_price": 0.00,
+        "batch_input_price": 0.00,
+        "batch_output_price": 0.00,
+    },
+    "nvidia/llama-embed-nemotron-8b": {
+        "input_price": 0.00,
+        "output_price": 0.00,
+        "batch_input_price": 0.00,
+        "batch_output_price": 0.00,
+    },
+    "Alibaba-NLP/gte-Qwen2-1.5B-instruct": {
+        "input_price": 0.00,
+        "output_price": 0.00,
+        "batch_input_price": 0.00,
+        "batch_output_price": 0.00,
+    },
+    "jinaai/jina-embeddings-v3": {
+        "input_price": 0.00,
+        "output_price": 0.00,
+        "batch_input_price": 0.00,
+        "batch_output_price": 0.00,
+    },
+    "BAAI/bge-m3": {
+        "input_price": 0.00,
+        "output_price": 0.00,
+        "batch_input_price": 0.00,
+        "batch_output_price": 0.00,
+    },
+    "nomic-ai/nomic-embed-text-v1.5": {
+        "input_price": 0.00,
+        "output_price": 0.00,
+        "batch_input_price": 0.00,
         "batch_output_price": 0.00,
     },
 }
