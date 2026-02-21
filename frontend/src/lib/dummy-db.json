@@ -8,12 +8,36 @@
     "createdAt": "2025-01-10T08:30:00Z"
   },
   "promptTemplates": [
-    { "label": "Search WHO guidelines", "icon": "🔍", "prompt": "According to the latest WHO guidelines, what are the recommended diagnostic criteria for " },
-    { "label": "Check CDC protocols", "icon": "🛡️", "prompt": "What are the current CDC protocols regarding infection control for " },
-    { "label": "Draft patient summary", "icon": "📋", "prompt": "Please help me draft a concise patient summary based on the following notes: \n\n" },
-    { "label": "Review lab results", "icon": "🔬", "prompt": "Can you analyze these latest lab results and highlight any values that fall outside the standard reference range? \n" },
-    { "label": "Verify dosage limits", "icon": "💊", "prompt": "What is the maximum recommended daily dosage of [Medication Name] for an adult patient with a BMI of [BMI / Weight]?" },
-    { "label": "Analyze case study", "icon": "🩺", "prompt": "Review the following clinical case presentation and suggest a differential diagnosis list: \n\n" }
+    {
+      "label": "Search WHO guidelines",
+      "icon": "🔍",
+      "prompt": "According to the latest WHO guidelines, what are the recommended diagnostic criteria for "
+    },
+    {
+      "label": "Check CDC protocols",
+      "icon": "🛡️",
+      "prompt": "What are the current CDC protocols regarding infection control for "
+    },
+    {
+      "label": "Draft patient summary",
+      "icon": "📋",
+      "prompt": "Please help me draft a concise patient summary based on the following notes: \n\n"
+    },
+    {
+      "label": "Review lab results",
+      "icon": "🔬",
+      "prompt": "Can you analyze these latest lab results and highlight any values that fall outside the standard reference range? \n"
+    },
+    {
+      "label": "Verify dosage limits",
+      "icon": "💊",
+      "prompt": "What is the maximum recommended daily dosage of [Medication Name] for an adult patient with a BMI of [BMI / Weight]?"
+    },
+    {
+      "label": "Analyze case study",
+      "icon": "🩺",
+      "prompt": "Review the following clinical case presentation and suggest a differential diagnosis list: \n\n"
+    }
   ],
   "assistants": [
     {
@@ -31,90 +55,6 @@
   ],
   "chatHistory": [
     {
-      "id": "chat-004",
-      "title": "Rabies PEP protocols for bat exposure",
-      "lastMessageAt": "2026-02-21T09:15:00Z",
-      "agentId": "clinical_rag",
-      "messages": [
-        {
-          "id": "msg-004-1",
-          "role": "user",
-          "content": "A 34-year-old male patient presented to the clinic after waking up to find a bat in his bedroom. He doesn't recall being bitten, but there is a small scratch on his arm. He has never been vaccinated against rabies. What is the recommended CDC protocol for post-exposure prophylaxis (PEP) in this scenario?",
-          "createdAt": "2026-02-21T09:05:00Z"
-        },
-        {
-          "id": "msg-004-2",
-          "role": "assistant",
-          "content": "According to the CDC guidelines, any potential exposure to a bat where a bite cannot be confidently ruled out (such as waking up with a bat in the room) warrants Rabies Post-Exposure Prophylaxis (PEP) if the bat is not available for testing.\n\nFor a previously unvaccinated immunocompetent person, the CDC recommends the following PEP protocol:\n\n1. **Wound Cleansing**: Immediate and thorough washing of the scratch and any other potential wounds with soap and water.\n2. **Human Rabies Immune Globulin (HRIG)**: Administer a single dose of HRIG at 20 IU/kg of body weight on Day 0. If anatomically feasible, the full dose should be infiltrated around and into the wound(s). Any remaining volume should be administered intramuscularly (IM) at a site distant from vaccine administration.\n3. **Rabies Vaccine**: Administer a series of 4 doses of rabies vaccine (1.0 mL IM, usually in the deltoid muscle). The doses should be given on Days 0, 3, 7, and 14.\n\n*Note: Do not administer the HRIG and the vaccine in the same syringe or at the same anatomical site.*\n\nDoes this patient have any known immunodeficiencies? The protocol for immunosuppressed patients requires an additional 5th dose of the vaccine on Day 28.",
-          "createdAt": "2026-02-21T09:06:00Z"
-        },
-        {
-          "id": "msg-004-3",
-          "role": "user",
-          "content": "No, the patient is immunocompetent and has no known allergies. For the HRIG, his weight is 80 kg. Can you calculate the expected HRIG dose?",
-          "createdAt": "2026-02-21T09:10:00Z"
-        },
-        {
-          "id": "msg-004-4",
-          "role": "assistant",
-          "content": "Certainly. For a patient weighing 80 kg, the calculation for the Human Rabies Immune Globulin (HRIG) dosage is as follows:\n\n*   **Recommended Dose**: 20 International Units (IU) per kilogram of body weight.\n*   **Patient Weight**: 80 kg\n*   **Calculation**: 80 kg × 20 IU/kg = 1,600 IU\n\n**Total HRIG required: 1,600 IU**\n\nHRIG is typically supplied in vials containing 150 IU/mL or 300 IU/mL.\n\n*   If using the **150 IU/mL** formulation: administer approx. **10.67 mL**.\n*   If using the **300 IU/mL** formulation: administer approx. **5.33 mL**.\n\nPlease remember to infiltrate as much of this volume as possible in and around the scratch, administering the remainder intramuscularly at a site distant from the vaccine injection.",
-          "createdAt": "2026-02-21T09:11:00Z"
-        },
-        {
-          "id": "msg-004-5",
-          "role": "user",
-          "content": "Perfect, thank you. Can you also draft a brief clinical note summarizing the treatment plan to put in his EHR?",
-          "createdAt": "2026-02-21T09:14:00Z"
-        },
-        {
-          "id": "msg-004-6",
-          "role": "assistant",
-          "content": "Here is a draft for the patient's Electronic Health Record (EHR) summarizing the treatment plan based on CDC guidelines:\n\n> **Subjective:** 34 y/o male presents after finding a bat in his bedroom upon waking. Patient denies known bat bite but notes a small, unexplained scratch on right forearm. Patient has no prior history of rabies vaccination. Immunocompetent. No known allergies.\n> \n> **Objective:** Vitals stable. Physical exam reveals a superficial ~1cm scratch on the right dorsal forearm. No active bleeding, no signs of infection.\n> \n> **Assessment:** Potential rabies exposure (bat exposure in sleeping quarters, scratch of unknown origin). Indication for rabies post-exposure prophylaxis (PEP) per current CDC guidelines.\n> \n> **Plan:** \n> 1. Thoroughly irrigated and cleansed the forearm scratch with soap and water in the clinic.\n> 2. **HRIG**: Administered 1,600 IU of Human Rabies Immune Globulin (based on 80 kg body weight at 20 IU/kg). Infiltrated into and around the scratch, with the remainder given IM in the right gluteus.\n> 3. **Rabies Vaccine**: Administered Day 0 dose (1.0 mL IM) in the left deltoid.\n> 4. Scheduled follow-up appointments for remaining vaccine doses on Day 3, Day 7, and Day 14.\n> 5. Counseled patient on signs of rabies, potential vaccine side effects, and the importance of completing the full vaccination series.\n\nLet me know if you would like me to adjust any of these details for the final note.",
-          "createdAt": "2026-02-21T09:15:00Z"
-        }
-      ]
-    },
-    {
-      "id": "chat-001",
-      "title": "Diabetes treatment guidelines update",
-      "lastMessageAt": "2026-02-19T10:15:00Z",
-      "agentId": "clinical_rag",
-      "messages": [
-        {
-          "id": "msg-001",
-          "role": "user",
-          "content": "Can you summarize the recent updates for type 2 diabetes medical management from the latest WHO guidelines?",
-          "createdAt": "2026-02-19T10:10:00Z"
-        },
-        {
-          "id": "msg-002",
-          "role": "assistant",
-          "content": "Of course. The recent WHO guidelines emphasize early combination therapy, prioritizing SGLT2 inhibitors and GLP-1 receptor agonists for patients with cardiovascular risk factors, even independent of baseline A1C levels. Does that help answer your question or would you like me to elaborate on a specific demographic?",
-          "createdAt": "2026-02-19T10:11:00Z"
-        }
-      ]
-    },
-    {
-      "id": "chat-002",
-      "title": "Scheduling next week's rounds",
-      "lastMessageAt": "2026-02-18T14:45:00Z",
-      "agentId": "general",
-      "messages": [
-        {
-          "id": "msg-003",
-          "role": "user",
-          "content": "Draft a quick memo to the pediatric residents about shifting morning rounds to 8:30 AM starting Monday.",
-          "createdAt": "2026-02-18T14:44:00Z"
-        },
-        {
-          "id": "msg-004",
-          "role": "assistant",
-          "content": "Here is a draft for your memo:\n\n**Subject: Update: Shift in Morning Rounds Schedule**\n\nDear Pediatric Residents,\n\nPlease note that starting this coming Monday, our morning rounds will be shifted to begin at 8:30 AM. \n\nPlease adjust your schedules accordingly and ensure all pre-rounding is completed prior to this new start time.\n\nBest regards,\nDr. Sarah Jenkins",
-          "createdAt": "2026-02-18T14:45:00Z"
-        }
-      ]
-    },
-    {
       "id": "chat-003",
       "title": "Markdown capability test",
       "lastMessageAt": "2026-02-21T01:00:00Z",
@@ -131,6 +71,154 @@
           "role": "assistant",
           "content": "Certainly! Here is a demonstration of various **Markdown elements** rendered in the chat UI.\n\n### Formatting Elements\n\n1.  **Bold Text**: Essential for emphasis.\n2.  *Italic Text*: Used for subtle highlights.\n3.  ~~Strikethrough~~: Marking out dated information.\n4.  `Inline Code`: Perfect for referencing variables like `user_id`.\n\n### Data Presentation\n\nHere is a table showing standard vs mock data:\n\n| Feature | Standard Request | Rendered Result |\n| :--- | :--- | :--- |\n| Routing | Static Pages | Dynamic (`/chat/[id]`) |\n| Renderer | Raw String | `react-markdown` |\n| Data | Hardcoded | `dummy-db.json` |\n\n### Blockquotes & Code Blocks\n\n> Blockquotes are great for citing clinical literature or emphasizing a specific ruling.\n\nHere's an example of a JSON code block:\n\n```json\n{\n  \"status\": 200,\n  \"message\": \"Markdown rendered successfully!\"\n}\n```\n\nFeel free to interact with these elements or let me know if you need to see other styles like [hyperlinks to external resources](https://example.com)!",
           "createdAt": "2026-02-21T01:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "chat-005",
+      "title": "WHO infertility guidelines",
+      "lastMessageAt": "2026-02-21T11:20:00Z",
+      "agentId": "clinical_rag",
+      "messages": [
+        {
+          "id": "msg-005-1",
+          "role": "user",
+          "content": "Enumerate WHO infertility guideline components and specify which section addresses male diagnostic protocols",
+          "createdAt": "2026-02-21T11:15:00Z"
+        },
+        {
+          "id": "msg-005-2",
+          "role": "assistant",
+          "content": "The WHO “Guideline for the prevention, diagnosis and treatment of infertility” is organized around three primary components — prevention, diagnosis and treatment 【0](9789240115774-eng.pdf)】.  In addition, the guideline contains a later chapter that discusses research gaps and future updates (Chapter 12) 【1](9789240115774-eng.pdf)】.  \n\nThe documents that were retrieved do not specify which particular subsection or chapter of the guideline is devoted to male‑specific diagnostic protocols, so that detail cannot be provided from the available sources.",
+          "createdAt": "2026-02-21T11:16:00Z",
+          "documents": [
+            {
+              "text": "Guideline for the prevention, diagnosis and treatment of infertility",
+              "source": "9789240115774-eng.pdf",
+              "score": 86.63910627365112,
+              "id": 463843575446391940
+            },
+            {
+              "text": "1. Infertility prevalence estimates: 1990-2021. Geneva: World Health Organization; 2023 (https://apps.who.int/iris/handle/10665/366700). 2. The selection and use of essential medicines 2023: web annex A: World Health Organization model list of essential medicines: 23rd list (2023). Geneva: World Health Organization; 2023 (https://iris.who.int/handle/10665/371090). 3. The selection and use of essential in vitro diagnostics: report of the fourth meeting of the WHO Strategic Advisory Group of Experts on In Vitro Diagnostics, 2022 (including the fourth WHO model list of essential in vitro diagnostics). Geneva: World Health Organization; 2023 (https://iris.who.int/handle/10665/373322). 4. Mburu G, Kiarie J, Allotey P. Towards a nuanced view and response to global fertility trends. Lancet. 2024;403(10440):1953-56 ( https://doi. org/10.1016/s0140-6736(24)00490-2). <!-- image --> ## Chapter ## 12 Research gaps, future scope and updating the guideline",
+              "source": "9789240115774-eng.pdf",
+              "score": 81.76298141479492,
+              "id": 463843575446392900
+            },
+            {
+              "text": "23. Misell LM, Holochwost D, Boban D, Santi N, Shefi S, Hellerstein MK et al. A stable isotopemass spectrometric method for measuring human spermatogenesis kinetics in vivo. J Urol. 2006;175(1):242-6 (https://doi.org/10.1016/S00225347(05)00053-4). 24. Kimmins S, Anderson RA, Barratt CLR, Behre HM, Catford SR, De Jonge CJ et al. Frequency, morbidity and equity - the case for increased research on male fertility. Nat Rev Urol. 2024;21(2):102-24 (https://doi.org/10.1038/ s41585-023-00820-4). 25. Cates W, Farley TM, Rowe PJ. Worldwide patterns of infertility: is Africa different? Lancet. 1985;2(8455):596-8 (https://doi.org/10.1016/ s0140-6736(85)90594-x). 26. Honig SC, Lipshultz LI, Jarow J. Significant medical pathology uncovered by a comprehensive male infertility evaluation. Fertil Steril. 1994;62(5):1028-34 (https://doi.org/10.1016/ S0015-0282(16)57069-1).",
+              "source": "9789240115774-eng.pdf",
+              "score": 79.85529899597168,
+              "id": 463843575446392450
+            }
+          ],
+          "sources": [
+            "9789240115774-eng.pdf",
+            "9789240115774-eng.pdf",
+            "9789240115774-eng.pdf"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chat-006",
+      "title": "Multiple document sources test",
+      "lastMessageAt": "2026-02-21T11:35:00Z",
+      "agentId": "clinical_rag",
+      "messages": [
+        {
+          "id": "msg-006-1",
+          "role": "user",
+          "content": "Can you summarize the infection control measures?",
+          "createdAt": "2026-02-21T11:34:00Z"
+        },
+        {
+          "id": "msg-006-2",
+          "role": "assistant",
+          "content": "Various guidelines cover infection control extensively. Standard precautions apply to all patient care, and transmission-based precautions (Contact, Droplet, and Airborne) are added based on suspected infections 【0](cdc-ic-standard.pdf)】. Hand hygiene is consistently highlighted as the most critical measure 【1](who-hand-hygiene.pdf)】. Additionally, appropriate use of PPE is required when exposure to infectious material is anticipated 【2](ppe-guidelines.pdf)】. Environmental cleaning and disinfection also play a huge role in preventing healthcare-associated infections 【3](env-cleaning.pdf)】. Facilities must implement proper respiratory hygiene protocols 【4](resp-hygiene.pdf)】 and manage sharps safely to prevent occupational exposures 【5](sharps-safety.pdf)】.",
+          "createdAt": "2026-02-21T11:35:00Z",
+          "documents": [
+            {
+              "text": "Standard Precautions are the minimum infection prevention practices that apply to all patient care, regardless of suspected or confirmed infection status of the patient, in any setting where health care is delivered.",
+              "source": "cdc-ic-standard.pdf",
+              "score": 90.1,
+              "id": 1111111
+            },
+            {
+              "text": "Hand hygiene is a core element of patient safety for the prevention of health care-associated infections and the spread of antimicrobial resistance.",
+              "source": "who-hand-hygiene.pdf",
+              "score": 88.5,
+              "id": 2222222
+            },
+            {
+              "text": "Personal protective equipment (PPE) refers to wearable equipment that is designed to protect health care personnel from exposure to or contact with infectious agents.",
+              "source": "ppe-guidelines.pdf",
+              "score": 85.2,
+              "id": 3333333
+            },
+            {
+              "text": "Routine cleaning and disinfection of environmental surfaces are essential to reduce the risk of transmission of healthcare-associated pathogens.",
+              "source": "env-cleaning.pdf",
+              "score": 82.0,
+              "id": 4444444
+            },
+            {
+              "text": "Respiratory hygiene/cough etiquette infection prevention measures are designed to limit the transmission of respiratory pathogens spread by droplet or airborne routes.",
+              "source": "resp-hygiene.pdf",
+              "score": 80.5,
+              "id": 5555555
+            },
+            {
+              "text": "Safe handling and disposal of needles and other sharp objects are critical to preventing healthcare worker exposure to bloodborne pathogens.",
+              "source": "sharps-safety.pdf",
+              "score": 79.1,
+              "id": 6666666
+            }
+          ],
+          "sources": [
+            "cdc-ic-standard.pdf",
+            "who-hand-hygiene.pdf",
+            "ppe-guidelines.pdf",
+            "env-cleaning.pdf",
+            "resp-hygiene.pdf",
+            "sharps-safety.pdf"
+          ]
+        },
+        {
+          "id": "msg-006-3",
+          "role": "user",
+          "content": "What about specifically for airborne transmission?",
+          "createdAt": "2026-02-21T11:36:00Z"
+        },
+        {
+          "id": "msg-006-4",
+          "role": "assistant",
+          "content": "For airborne transmission, such as with tuberculosis or measles, airborne precautions must be implemented in addition to standard precautions. This primarily involves placing the patient in an Airborne Infection Isolation Room (AIIR) 【0](cdc-airborne-iso.pdf)】 and requiring healthcare personnel to wear a fit-tested NIOSH-approved N95 or higher-level respirator before entering the room 【1](osha-resp-protect.pdf)】. Restricting the movement of the patient outside the room is also advised unless absolutely necessary, in which case the patient should wear a surgical mask 【2](who-patient-transport.pdf)】.",
+          "createdAt": "2026-02-21T11:37:00Z",
+          "documents": [
+            {
+              "text": "Airborne Infection Isolation Rooms (AIIRs) are single-patient rooms at negative pressure relative to the surrounding areas, and with a minimum of 6 air changes per hour.",
+              "source": "cdc-airborne-iso.pdf",
+              "score": 92.4,
+              "id": 7777777
+            },
+            {
+              "text": "Employers must implement a written respiratory protection program with required worksite-specific procedures and elements for required respirator use.",
+              "source": "osha-resp-protect.pdf",
+              "score": 89.2,
+              "id": 8888888
+            },
+            {
+              "text": "When transport of a patient on Airborne Precautions is necessary, place a medical mask on the patient, if tolerated, to contain infectious droplets.",
+              "source": "who-patient-transport.pdf",
+              "score": 84.7,
+              "id": 9999999
+            }
+          ],
+          "sources": [
+            "cdc-airborne-iso.pdf",
+            "osha-resp-protect.pdf",
+            "who-patient-transport.pdf"
+          ]
         }
       ]
     }
