@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import torch
 from crawl4ai import (
     AsyncWebCrawler,
     BrowserConfig,
@@ -8,7 +9,14 @@ from crawl4ai import (
     CrawlResult,
     JsonCssExtractionStrategy,
 )
-from docling.document_converter import DocumentConverter
+from docling.datamodel.accelerator_options import AcceleratorDevice, AcceleratorOptions
+from docling.datamodel.base_models import InputFormat
+from docling.datamodel.pipeline_options import (
+    PdfPipelineOptions,
+    TableFormerMode,
+    TableStructureOptions,
+)
+from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling_core.types.doc.document import DoclingDocument
 from playwright.async_api import async_playwright
 
@@ -135,7 +143,32 @@ async def who_pdf_list_scrapper(website_url: str) -> None:
 
 
 def document_extractor(path: Path) -> DoclingDocument:
-    doc_converter = DocumentConverter()
+    """
+    Using Docling to extract contents from document.
+    """
+    pdf_pipeline_options = PdfPipelineOptions(
+        accelerator_options=AcceleratorOptions(device=AcceleratorDevice.AUTO),
+        # enrichments
+        do_code_enrichment=True,
+        do_formula_enrichment=True,
+        # image support options
+        do_picture_classification=True,  # Classify the images based on PictureClassificationLabel type
+        generate_picture_images=True,  # Get the images from the file
+        images_scale=2.0,
+        do_picture_description=True,  # Get the text version of the image for embedding
+        # table structure options
+        do_table_structure=True,
+        table_structure_options=TableStructureOptions(
+            do_cell_matching=True, mode=TableFormerMode.ACCURATE
+        ),
+    )
+    print("Loading File and Setting up Pipeline Options")
+    doc_converter = DocumentConverter(
+        format_options={
+            InputFormat.PDF: PdfFormatOption(pipeline_options=pdf_pipeline_options)
+        }
+    )
+    print("Initializing converter")
     return doc_converter.convert(path).document
 
 

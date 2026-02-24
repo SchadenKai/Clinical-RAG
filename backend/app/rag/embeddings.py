@@ -1,11 +1,11 @@
 import time
 
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.embeddings import Embeddings, FakeEmbeddings
 from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
 from langchain_nebius.embeddings import NebiusEmbeddings
 from langchain_nomic.embeddings import NomicEmbeddings
 from langchain_openai.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
-from langchain_community.embeddings import HuggingFaceEmbeddings
 
 from app.core.config import Settings, settings
 from app.rag.models import EmbeddingResponseModel
