@@ -16,11 +16,13 @@ def get_chunk_settings(model_name: str) -> dict[int, int]:
             "Falling back to smallest chunk size value."
         )
         return chunk_size
+
     ctx_limit = EMBEDDING_CTX_LIMITS[model_name]
+    chunk_size = chunk_size_values[-1]  # default to largest when ctx fits all buckets
     for size in chunk_size_values:
-        if ctx_limit > size:
-            continue
-        chunk_size = size
+        if ctx_limit <= size:
+            chunk_size = size
+            break
 
     chunk_overlap = round(chunk_size * chunk_overlap_percentage)
     chunk_overlap = chunk_overlap if chunk_overlap <= 50 else 50

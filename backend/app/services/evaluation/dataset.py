@@ -1,4 +1,3 @@
-
 from deepeval.dataset.golden import Golden
 from deepeval.models import DeepEvalBaseModel, GPTModel
 from deepeval.models.base_model import DeepEvalBaseEmbeddingModel
@@ -44,7 +43,7 @@ class SyntheticDataGenerator:
         if self._embedder:
             return self._embedder
         self._embedder = LocalEmbeddingModel(
-            model=self.settings.bi_encoder_model,
+            model=self.settings.embedding_model,
             api_key=self.settings.embedding_api_key,
             base_url="https://api.studio.nebius.ai/v1/",
         )

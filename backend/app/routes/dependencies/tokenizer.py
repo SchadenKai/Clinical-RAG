@@ -14,7 +14,7 @@ def get_tokenizer_service(
 ) -> TokenizerService:
     return TokenizerService(
         model=settings.llm_model_name,
-        embedding=settings.bi_encoder_model,
+        embedding=settings.embedding_model,
         model_provider=settings.llm_provider,
         embedding_provider=settings.embedding_provider,
     )
