@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     # vector config
     vector_dim: int = 3584
     text_field_max_length: int = 2048
+    chunk_strategy: str = "hybrid_hierarchal"
     chunk_size: int = 1024
     chunk_overlap: int = 0
     lowest_score_threshold: float = 0.6

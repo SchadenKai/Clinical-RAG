@@ -15,6 +15,7 @@ class TokenizerService:
         self.embedding: str = embedding
         self.model_provider: str = model_provider
         self.embedding_provider: str = embedding_provider
+        self.fallback_tokenizer: str = "bert-base-uncased"
 
     @property
     def embedding_tokenizer(self):
@@ -24,15 +25,27 @@ class TokenizerService:
         if self.model_provider == "openai":
             encoding_name = tiktoken.encoding_name_for_model(self.embedding)
             self._embedding_tokenizer_model = tiktoken.get_encoding(encoding_name)
-        elif self.model_provider == "nebius":
-            hf_model_id = nebius_model_map[self.embedding.replace("-fast", "")]
-            self._embedding_tokenizer_model = AutoTokenizer.from_pretrained(
-                hf_model_id, token=settings.hf_api_key, trust_remote_code=True
-            )
         else:
-            app_logger.error("Given embedding provider is not yet supported.")
-            raise ValueError("Given embedding provider is not yet supported.")
-        app_logger.info(f"Getting tokenizer model for given model: {self.embedding}")
+            try:
+                hf_model_id = nebius_model_map[self.embedding.replace("-fast", "")]
+                self._embedding_tokenizer_model = AutoTokenizer.from_pretrained(
+                    hf_model_id, token=settings.hf_api_key, trust_remote_code=True
+                )
+            except Exception as _:
+                app_logger.warning(
+                    "Given embedding provider is not yet supported."
+                    "Using a fallback tokenizer instead"
+                )
+                self._embedding_tokenizer_model = AutoTokenizer.from_pretrained(
+                    self.fallback_tokenizer,
+                    token=settings.hf_api_key,
+                    trust_remote_code=True,
+                )
+
+        app_logger.info(
+            f"Using {self._embedding_tokenizer_model.name} "
+            f"tokenizer model for given model: {self.embedding}"
+        )
         return self._embedding_tokenizer_model
 
     @property
@@ -44,16 +57,28 @@ class TokenizerService:
             encoding_name = tiktoken.encoding_name_for_model(self.model)
             self._tokenizer_model = tiktoken.get_encoding(encoding_name)
             return self._tokenizer_model
-        elif self.model_provider == "nebius":
-            hf_model_id = nebius_model_map[self.model]
-            tokenizer = AutoTokenizer.from_pretrained(
-                hf_model_id, token=settings.hf_api_key, trust_remote_code=True
-            )
-            self._tokenizer_model = tokenizer
-            return self._tokenizer_model
         else:
-            app_logger.error("Given embedding provider is not yet supported.")
-            raise ValueError("Given embedding provider is not yet supported.")
+            try:
+                hf_model_id = nebius_model_map[self.embedding.replace("-fast", "")]
+                self._tokenizer_model = AutoTokenizer.from_pretrained(
+                    hf_model_id, token=settings.hf_api_key, trust_remote_code=True
+                )
+            except Exception as _:
+                app_logger.warning(
+                    "Given embedding provider is not yet supported."
+                    "Using a fallback tokenizer instead"
+                )
+                self._tokenizer_model = AutoTokenizer.from_pretrained(
+                    self.fallback_tokenizer,
+                    token=settings.hf_api_key,
+                    trust_remote_code=True,
+                )
+
+        app_logger.info(
+            f"Using {self._tokenizer_model.name} "
+            f"tokenizer model for given model: {self.embedding}"
+        )
+        return self._tokenizer_model
 
     def compute_token_cnt(
         self, text: str | list[str], is_embedding_model: bool = True
