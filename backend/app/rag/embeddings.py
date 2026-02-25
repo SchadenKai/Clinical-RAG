@@ -46,7 +46,8 @@ class EmbeddingService:
                 )
             elif self.provider == "huggingface":
                 # For HuggingFace, model is passed to model_name argument.
-                # Remove it from config first since HuggingFaceEmbeddings doesn't accept "model".
+                # Remove it from config first since HuggingFaceEmbeddings
+                # doesn't accept "model".
                 hf_config = dict(self.config)
                 model_n = hf_config.pop("model", None)
                 self._client = HuggingFaceEmbeddings(model_name=model_n, **hf_config)

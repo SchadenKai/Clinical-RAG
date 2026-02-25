@@ -49,7 +49,9 @@ class ChunkerFactory:
         return SpacyTextSplitter(
             pipeline=pipeline,
             chunk_size=chunk_size if chunk_size is not None else self.chunk_size,
-            chunk_overlap=chunk_overlap if chunk_overlap is not None else self.chunk_overlap,
+            chunk_overlap=(
+                chunk_overlap if chunk_overlap is not None else self.chunk_overlap
+            ),
             **kwargs,
         )
 
@@ -61,7 +63,9 @@ class ChunkerFactory:
     ) -> RecursiveCharacterTextSplitter:
         return RecursiveCharacterTextSplitter(
             chunk_size=chunk_size if chunk_size is not None else self.chunk_size,
-            chunk_overlap=chunk_overlap if chunk_overlap is not None else self.chunk_overlap,
+            chunk_overlap=(
+                chunk_overlap if chunk_overlap is not None else self.chunk_overlap
+            ),
             **kwargs,
         )
 
@@ -73,7 +77,9 @@ class ChunkerFactory:
     ) -> CharacterTextSplitter:
         return CharacterTextSplitter(
             chunk_size=chunk_size if chunk_size is not None else self.chunk_size,
-            chunk_overlap=chunk_overlap if chunk_overlap is not None else self.chunk_overlap,
+            chunk_overlap=(
+                chunk_overlap if chunk_overlap is not None else self.chunk_overlap
+            ),
             **kwargs,
         )
 
@@ -85,7 +91,9 @@ class ChunkerFactory:
     ) -> MarkdownTextSplitter:
         return MarkdownTextSplitter(
             chunk_size=chunk_size if chunk_size is not None else self.chunk_size,
-            chunk_overlap=chunk_overlap if chunk_overlap is not None else self.chunk_overlap,
+            chunk_overlap=(
+                chunk_overlap if chunk_overlap is not None else self.chunk_overlap
+            ),
             **kwargs,
         )
 

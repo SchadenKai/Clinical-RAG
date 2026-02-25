@@ -151,7 +151,8 @@ def document_extractor(path: Path) -> DoclingDocument:
         do_code_enrichment=True,
         do_formula_enrichment=True,
         # image support options
-        do_picture_classification=True,  # Classify the images based on PictureClassificationLabel type
+        # Classify the images based on PictureClassificationLabel type
+        do_picture_classification=True,
         generate_picture_images=True,  # Get the images from the file
         images_scale=2.0,
         do_picture_description=True,  # Get the text version of the image for embedding
