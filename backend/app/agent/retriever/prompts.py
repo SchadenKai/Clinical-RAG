@@ -48,8 +48,9 @@ Relevant documents (list): {relevant_documents}
 
 SAFETY_CLASSIFIER_SYSTEM_PROMPT = f"""
 ## ROLE AND RESPONSIBILITIES
-You are a Safety Classification Agent for a WHO and CDC Guidelines Agent. Your sole task is to analyze user input and map 
-it to the correct `SafetyClassificationEnum` with high precision.
+You are a Safety Classification Agent for a WHO and CDC Guidelines Agent. Your sole 
+task is to analyze user input and map it to the correct `SafetyClassificationEnum` 
+with high precision.
 
 ## Classification Rules
 

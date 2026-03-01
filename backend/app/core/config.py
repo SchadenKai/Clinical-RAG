@@ -16,7 +16,9 @@ class Settings(BaseSettings):
     app_title: str = "Clinical Guideline RAG Service (CDC/WHO)"
     app_version: str = "v0.1.0"
     timezone: str = "Asia/Manila"
-    jwt_secret: str = os.environ.get("JWT_SECRET", "super-secret-testing-key-please-change")
+    jwt_secret: str = os.environ.get(
+        "JWT_SECRET", "super-secret-testing-key-please-change"
+    )
 
     # NOTE: temporarily made this optional for the testing to pass
     openai_api_key: str = os.environ.get("OPENAI_API_KEY", "")

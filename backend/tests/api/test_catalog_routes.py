@@ -13,10 +13,30 @@ class TestCatalogEndpoints:
     def _seed_documents(self, db):
         """Helper: insert a set of documents and return them."""
         docs = [
-            Document(source="who", filename="who_guide.pdf", status="INDEXED", url="who/who_guide.pdf"),
-            Document(source="who", filename="who_report.pdf", status="INDEXED", url="who/who_report.pdf"),
-            Document(source="cdc", filename="cdc_brief.pdf", status="INDEXED", url="cdc/cdc_brief.pdf"),
-            Document(source="upload", filename="local_doc.pdf", status="PENDING", url=None),
+            Document(
+                source="who",
+                filename="who_guide.pdf",
+                status="INDEXED",
+                url="who/who_guide.pdf",
+            ),
+            Document(
+                source="who",
+                filename="who_report.pdf",
+                status="INDEXED",
+                url="who/who_report.pdf",
+            ),
+            Document(
+                source="cdc",
+                filename="cdc_brief.pdf",
+                status="INDEXED",
+                url="cdc/cdc_brief.pdf",
+            ),
+            Document(
+                source="upload",
+                filename="local_doc.pdf",
+                status="PENDING",
+                url=None,
+            ),
         ]
         for d in docs:
             db.add(d)
@@ -68,7 +88,12 @@ class TestCatalogEndpoints:
         """GET /catalog/{id} for a known doc returns metadata + presigned url."""
         from unittest.mock import MagicMock, patch
 
-        doc = Document(source="who", filename="detail_doc.pdf", status="INDEXED", url="who/detail_doc.pdf")
+        doc = Document(
+            source="who",
+            filename="detail_doc.pdf",
+            status="INDEXED",
+            url="who/detail_doc.pdf",
+        )
         db.add(doc)
         db.commit()
         db.refresh(doc)

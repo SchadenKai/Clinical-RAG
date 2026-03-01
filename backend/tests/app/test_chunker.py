@@ -49,7 +49,9 @@ class TestChunkerFactoryGetSemantic:
     @patch("app.rag.chunker.SpacyTextSplitter", autospec=True)
     def test_explicit_overrides(self, mock_cls: MockType):
         factory = ChunkerFactory(chunk_size=800, chunk_overlap=100)
-        factory.get_semantic(pipeline="en_core_web_lg", chunk_size=256, chunk_overlap=32)
+        factory.get_semantic(
+            pipeline="en_core_web_lg", chunk_size=256, chunk_overlap=32
+        )
         mock_cls.assert_called_once_with(
             pipeline="en_core_web_lg",
             chunk_size=256,

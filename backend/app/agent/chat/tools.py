@@ -1,11 +1,9 @@
-from typing import cast
 
 from langchain.tools import ToolRuntime
 from langchain_core.tools import tool
 
 from app.logger import app_logger
 from app.services.rag import RetrievalService
-from app.agent.retriever.state import AgentState as InferenceAgentState
 
 
 @tool

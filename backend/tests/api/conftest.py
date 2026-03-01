@@ -121,10 +121,10 @@ _create_tables_and_seed()
 
 # ── Fake dependency implementations ───────────────────────────────────────────
 
-from fastapi import Depends
+from fastapi import Depends  # noqa: E402
 
 
-def _fake_current_user(db = Depends(get_db)):
+def _fake_current_user(db=Depends(get_db)):  # noqa: B008
     user = db.query(User).filter_by(id=_DEV_USER_ID).first()
     return user
 

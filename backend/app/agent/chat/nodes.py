@@ -9,7 +9,9 @@ from app.agent.chat.state import AgentState
 from app.logger import app_logger
 
 
-def complexity_router(state: AgentState, runtime: Runtime[AgentContext]) -> dict[str, Any]:
+def complexity_router(
+    state: AgentState, runtime: Runtime[AgentContext]
+) -> dict[str, Any]:
     """
     Decides the mode of execution based on the query complexity.
     Modes: 'fast', 'react', 'plan_and_execute'
@@ -44,7 +46,9 @@ def fast_node(state: AgentState, runtime: Runtime[AgentContext]) -> dict[str, An
     return {"messages": [response]}
 
 
-def react_loop_node(state: AgentState, runtime: Runtime[AgentContext]) -> dict[str, Any]:
+def react_loop_node(
+    state: AgentState, runtime: Runtime[AgentContext]
+) -> dict[str, Any]:
     """
     LLM call for the ReAct flow.
     """

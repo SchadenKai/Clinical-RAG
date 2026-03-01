@@ -10,7 +10,10 @@ from app.db.models import Document
 
 
 class TestIndexingEndpoints:
-    """Tests for POST /indexing/trigger/*, POST /indexing/upload, GET /indexing/status."""
+    """
+    Tests for POST /indexing/trigger/*, POST /indexing/upload,
+    GET /indexing/status.
+    """
 
     # ── POST /indexing/trigger/who ─────────────────────────────────────────────
 

@@ -27,7 +27,9 @@ def get_current_user(
     # 2. Extract 'sub' (the UUID of the user).
     # 3. Lookup or Create the user in the Profile table.
     
-    is_dummy_token = credentials and credentials.credentials in ("dummy_token", "null", "undefined", "")
+    is_dummy_token = credentials and credentials.credentials in (
+        "dummy_token", "null", "undefined", ""
+    )
     
     if settings.dev_mode and (not credentials or is_dummy_token):
         # Fallback to a hardcoded dev user when testing locally without tokens

@@ -68,6 +68,9 @@ class TestVectorDBEndpoints:
     # ── DELETE /vector_db/collection ──────────────────────────────────────────
 
     def test_clear_collection(self, client: TestClient):
-        """DELETE /vector_db/collection should return 200 with the mock Milvus client."""
+        """
+        DELETE /vector_db/collection should return 200 with the 
+        mock Milvus client.
+        """
         resp = client.delete("/v1/vector_db/collection")
         assert resp.status_code in (200, 204)

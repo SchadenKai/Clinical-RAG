@@ -100,7 +100,9 @@ def upgrade() -> None:
     sa.Column('metadata', sa.JSON(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['agent_id'], ['agents.id'], ondelete='SET NULL'),
-    sa.ForeignKeyConstraint(['conversation_id'], ['chat_conversations.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(
+        ['conversation_id'], ['chat_conversations.id'], ondelete='CASCADE'
+    ),
     sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###
