@@ -37,7 +37,6 @@ import pytest
 
 from app.rag.utils import get_chunk_settings
 
-
 # =============================================================================
 # Unknown / unrecognised models (early-return path)
 # =============================================================================
@@ -154,18 +153,40 @@ class TestGetChunkSettingsConcreteValues:
             "azure/text-embedding-ada-002",
             # OpenRouter
             "openrouter/openai/text-embedding-3-small",
-            "openrouter/cohere/embed-english-v3.0",
-            "openrouter/cohere/embed-multilingual-v3.0",
             # HuggingFace
             "BAAI/bge-m3",
             "nomic-ai/nomic-embed-text-v1.5",
-            "sentence-transformers/all-MiniLM-L6-v2",
+        ],
+    )
+    def test_large_context_models_yield_1024_with_50_overlap(self, model_name: str):
+        result = get_chunk_settings(model_name=model_name)
+        assert result == {"chunk_size": 1024, "chunk_overlap": 50}, (
+            f"Model '{model_name}' did not return expected values."
+        )
+
+    @pytest.mark.parametrize(
+        "model_name",
+        [
+            "openrouter/cohere/embed-english-v3.0",
+            "openrouter/cohere/embed-multilingual-v3.0",
             "intfloat/multilingual-e5-large",
         ],
     )
-    def test_all_known_models_yield_1024_with_50_overlap(self, model_name: str):
+    def test_small_context_models_yield_512_with_50_overlap(self, model_name: str):
         result = get_chunk_settings(model_name=model_name)
-        assert result == {"chunk_size": 1024, "chunk_overlap": 50}, (
+        assert result == {"chunk_size": 512, "chunk_overlap": 50}, (
+            f"Model '{model_name}' did not return expected values."
+        )
+
+    @pytest.mark.parametrize(
+        "model_name",
+        [
+            "sentence-transformers/all-MiniLM-L6-v2",
+        ],
+    )
+    def test_mini_context_models_yield_128_with_26_overlap(self, model_name: str):
+        result = get_chunk_settings(model_name=model_name)
+        assert result == {"chunk_size": 128, "chunk_overlap": 26}, (
             f"Model '{model_name}' did not return expected values."
         )
 
@@ -198,17 +219,31 @@ class TestGetChunkSettingsOverlapCap:
 
 class TestGetChunkSettingsMocked:
     """
-    Verify the loop logic by injecting specific ctx_limit values.
-    All paths result in chunk_size=1024 because the last iteration always
-    unconditionally sets chunk_size=1024 before the ctx_limit guard.
+    Verify the logic by injecting specific ctx_limit values.
     """
 
-    @pytest.mark.parametrize("ctx_limit", [1, 128, 256, 512, 1024, 1025, 2048, 8191, 32768])
-    def test_any_ctx_limit_yields_chunk_size_1024(self, ctx_limit: int):
+    @pytest.mark.parametrize("ctx_limit", [1, 128, 256])
+    def test_ctx_limit_yields_chunk_size_128(self, ctx_limit: int):
+        with patch("app.rag.utils.EMBEDDING_CTX_LIMITS", {"m": ctx_limit}):
+            result = get_chunk_settings("m")
+        assert result == {"chunk_size": 128, "chunk_overlap": 26}, (
+            f"ctx_limit={ctx_limit} should produce chunk_size=128"
+        )
+
+    @pytest.mark.parametrize("ctx_limit", [512, 1024])
+    def test_ctx_limit_yields_chunk_size_512(self, ctx_limit: int):
+        with patch("app.rag.utils.EMBEDDING_CTX_LIMITS", {"m": ctx_limit}):
+            result = get_chunk_settings("m")
+        assert result == {"chunk_size": 512, "chunk_overlap": 50}, (
+            f"ctx_limit={ctx_limit} should produce chunk_size=512"
+        )
+
+    @pytest.mark.parametrize("ctx_limit", [1025, 2048, 8191, 32768])
+    def test_ctx_limit_yields_chunk_size_1024(self, ctx_limit: int):
         with patch("app.rag.utils.EMBEDDING_CTX_LIMITS", {"m": ctx_limit}):
             result = get_chunk_settings("m")
         assert result == {"chunk_size": 1024, "chunk_overlap": 50}, (
-            f"ctx_limit={ctx_limit} should still produce chunk_size=1024"
+            f"ctx_limit={ctx_limit} should produce chunk_size=1024"
         )
 
     def test_recognises_mocked_model_as_known(self):

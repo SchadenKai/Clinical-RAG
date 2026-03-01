@@ -41,11 +41,6 @@ class TokenizerService:
                     token=settings.hf_api_key,
                     trust_remote_code=True,
                 )
-
-        app_logger.info(
-            f"Using {self._embedding_tokenizer_model.name} "
-            f"tokenizer model for given model: {self.embedding}"
-        )
         return self._embedding_tokenizer_model
 
     @property

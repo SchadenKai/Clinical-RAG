@@ -13,20 +13,36 @@ export const APP_CONFIG = {
 };
 
 // API Endpoints
-export const API_ENDPOINTS = {
-  // Base endpoints
-  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1',
-  
-  // Chat endpoints
-  CHAT_SESSIONS: '/chats',
-  CHAT_MESSAGES: (chatId: string) => `/chats/${chatId}/messages`,
-  
-  // Agent endpoints
-  AGENTS: '/agents',
-  AGENT_DETAIL: (agentId: string) => `/agents/${agentId}`,
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/v1';
 
-  // User endpoints
-  USER_PROFILE: '/users/me',
+export const API_ENDPOINTS = {
+  CHAT: {
+    BASE: `${API_BASE_URL}/chat`,
+    SESSIONS: `${API_BASE_URL}/chat/sessions`,
+  },
+  INDEXING: {
+    TRIGGER_WHO: `${API_BASE_URL}/indexing/trigger/who`,
+    TRIGGER_CDC: `${API_BASE_URL}/indexing/trigger/cdc`,
+    UPLOAD: `${API_BASE_URL}/indexing/upload`,
+    STATUS: `${API_BASE_URL}/indexing/status`,
+  },
+  CATALOG: {
+    BASE: `${API_BASE_URL}/catalog`,
+  },
+  SETTINGS: {
+    LLM: `${API_BASE_URL}/settings/llm`,
+    EMBEDDING: `${API_BASE_URL}/settings/embedding`,
+    CONFIG: `${API_BASE_URL}/settings/config`,
+  },
+  AUTH: {
+    LOGIN: `${API_BASE_URL}/auth/login`,
+    SIGNUP: `${API_BASE_URL}/auth/signup`,
+  },
+  VECTOR_DB: {
+    SEARCH: `${API_BASE_URL}/vector_db/search`,
+    CLEAR: `${API_BASE_URL}/vector_db/collection`,
+  },
+  USER_PROFILE: `${API_BASE_URL}/users/me`,
 };
 
 // Feature Flags

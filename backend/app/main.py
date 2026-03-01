@@ -5,8 +5,10 @@ from typing import Annotated
 import torch
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.core.config import settings
+from app.core.database import engine
 from app.logger import app_logger
 from app.rag.db import VectorClient
 from app.routes.dependencies.settings import get_app_settings
@@ -19,6 +21,15 @@ from app.routes.v1.main import v1_router
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncGenerator:
+    app_logger.info("Checking PostgreSQL connection")
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        app_logger.info("PostgreSQL connection successful")
+    except Exception as e:
+        app_logger.error(f"PostgreSQL connection failed: {e}")
+        raise
+
     app_logger.info("Initializing vector database")
     settings = get_app_settings()
     vector_db = get_vector_client_manual(settings)

@@ -6,7 +6,7 @@ from fastapi import Depends
 from app.core.config import Settings
 from app.routes.dependencies.file_store import get_s3_service
 from app.routes.dependencies.settings import get_app_settings
-from app.services.evaluation.dataset import SyntheticDataGenerator
+from app.services.evaluation.data_generator import SyntheticDataGenerator
 from app.services.file_store.db import S3Service
 
 

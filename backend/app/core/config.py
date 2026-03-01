@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     app_title: str = "Clinical Guideline RAG Service (CDC/WHO)"
     app_version: str = "v0.1.0"
     timezone: str = "Asia/Manila"
+    jwt_secret: str = os.environ.get("JWT_SECRET", "super-secret-testing-key-please-change")
 
     # NOTE: temporarily made this optional for the testing to pass
     openai_api_key: str = os.environ.get("OPENAI_API_KEY", "")
@@ -55,6 +56,17 @@ class Settings(BaseSettings):
     minio_username: str = os.environ.get("MINIO_USERNAME", "abcd")
     minio_password: str = os.environ.get("MINIO_PASSWORD", "abcd2345")
     minio_bucket_name: str = os.environ.get("MINO_BUCKET_NAME", "default")
+
+    # relational database config
+    db_host: str = os.environ.get("DB_HOST", "windows-server")
+    db_port: int = int(os.environ.get("DB_PORT", "5432"))
+    db_user: str = os.environ.get("DB_USER", "postgres")
+    db_password: str = os.environ.get("DB_PASSWORD", "password")
+    db_name: str = os.environ.get("DB_NAME", "postgres")
+
+    @property
+    def database_url(self) -> str:
+        return f"postgresql+psycopg2://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
 
 
 settings = Settings()

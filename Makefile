@@ -1,6 +1,9 @@
 setup-dev:
 	cd backend && uv sync --all-extras && playwright install
 
+run-dev-frontend:
+	cd frontend && npm run dev
+
 run-containers:
 	cd deployment && docker compose up -d --build --force-recreate
 

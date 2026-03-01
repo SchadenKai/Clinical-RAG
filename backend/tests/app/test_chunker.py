@@ -5,19 +5,11 @@ Comprehensive unit tests for app.rag.chunker (ChunkerFactory & ChunkerService).
 from unittest.mock import MagicMock, patch
 
 import pytest
-from docling.chunking import HybridChunker
-from langchain_text_splitters import (
-    CharacterTextSplitter,
-    MarkdownTextSplitter,
-    RecursiveCharacterTextSplitter,
-    SpacyTextSplitter,
-)
 from pytest_mock import MockerFixture, MockType
 
 from app.core.config import Settings
 from app.rag.chunker import ChunkerFactory, ChunkerService
 from app.services.llm.tokenizer import TokenizerService
-
 
 # =============================================================================
 # ChunkerFactory

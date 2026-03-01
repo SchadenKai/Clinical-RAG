@@ -11,12 +11,12 @@ EMBEDDING_CTX_LIMITS = {
     "models/gemini-embedding-001": 2048,
     
     # Nebius AI
-    "nebius/Qwen/Qwen3-Embedding-8B": 32768,
-    "nebius/qwen/qwen3-embedding-8b": 32768,
-    "nebius/BAAI/bge-multilingual-gemma2": 8192,
-    "nebius/bge-multilingual-gemma2": 8192,
-    "nebius/BAAI/BGE-ICL": 32768,
-    "nebius/intfloat/e5-mistral-7b-instruct": 4096,
+    "Qwen/Qwen3-Embedding-8B": 32768,
+    "qwen/qwen3-embedding-8b": 32768,
+    "BAAI/bge-multilingual-gemma2": 8192,
+    "bge-multilingual-gemma2": 8192,
+    "BAAI/BGE-ICL": 32768,
+    "intfloat/e5-mistral-7b-instruct": 4096,
     
     # Azure OpenAI
     "azure/text-embedding-3-small": 8191,

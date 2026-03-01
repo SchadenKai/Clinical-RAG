@@ -111,14 +111,13 @@ class ChunkerFactory:
 class ChunkerService:
     def __init__(
         self,
-        embedding_model: str,
         app_settings: Settings,
         tokenizer_service: TokenizerService,
         chunker_factory: ChunkerFactory | None = None,
     ):
-        self.embedding_model: str = embedding_model
         self.app_settings: Settings = app_settings
-        self.tokenizer_service = tokenizer_service
+        self.embedding_model: str = self.app_settings.embedding_model
+        self.tokenizer_service: TokenizerService = tokenizer_service
 
         # Resolve default chunk parameters and tokenizer once at init
         chunk_info = get_chunk_settings(model_name=self.embedding_model)
@@ -126,8 +125,8 @@ class ChunkerService:
 
         self.factory = chunker_factory or ChunkerFactory(
             tokenizer=tokenizer,
-            chunk_size=chunk_info["chunk_size"],
-            chunk_overlap=chunk_info["chunk_overlap"],
+            chunk_size=chunk_info.get("chunk_size"),
+            chunk_overlap=chunk_info.get("chunk_overlap"),
         )
 
     def get(self, chunker_name: _CHUNKERS_NAME, **kwargs: Any) -> Any:

@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from app.routes.dependencies.data_generator import get_synthetic_data_generator
 from app.routes.dependencies.evaluator import get_evaluation_pipeline
 from app.routes.dependencies.rag import get_indexing_service, get_retrieval_service
-from app.services.evaluation.dataset import SyntheticDataGenerator
+from app.services.evaluation.data_generator import SyntheticDataGenerator
 from app.services.evaluation.evaluator import EvaluationPipeline
 from app.services.rag import IndexingService, RetrievalService
 from app.services.scrapper import who_pdf_url_list
