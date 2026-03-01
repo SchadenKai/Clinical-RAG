@@ -47,15 +47,15 @@ class TestGetChunkSettingsUnknownModel:
 
     def test_returns_128_as_int(self):
         result = get_chunk_settings(model_name="unknown/model")
-        assert result == 128
+        assert result == {"chunk_size": 128, "chunk_overlap": 26}
 
-    def test_returns_plain_int_not_dict(self):
+    def test_returns_dict_not_int(self):
         result = get_chunk_settings(model_name="not-a-real-model")
-        assert not isinstance(result, dict)
-        assert isinstance(result, int)
+        assert isinstance(result, dict)
+        assert isinstance(result["chunk_size"], int)
 
     def test_empty_string_is_unknown(self):
-        assert get_chunk_settings(model_name="") == 128
+        assert get_chunk_settings(model_name="") == {"chunk_size": 128, "chunk_overlap": 26}
 
     def test_emits_warning_for_unknown_model(self, caplog):
         import logging
@@ -143,10 +143,10 @@ class TestGetChunkSettingsConcreteValues:
             "gemini-embedding-001",
             "models/gemini-embedding-001",
             # Nebius AI — various large ctx
-            "nebius/Qwen/Qwen3-Embedding-8B",
-            "nebius/BAAI/bge-multilingual-gemma2",
-            "nebius/BAAI/BGE-ICL",
-            "nebius/intfloat/e5-mistral-7b-instruct",
+            "Qwen/Qwen3-Embedding-8B",
+            "BAAI/bge-multilingual-gemma2",
+            "BAAI/BGE-ICL",
+            "intfloat/e5-mistral-7b-instruct",
             # Azure OpenAI (8191)
             "azure/text-embedding-3-small",
             "azure/text-embedding-3-large",
@@ -255,8 +255,8 @@ class TestGetChunkSettingsMocked:
     def test_unrecognised_model_still_returns_int_when_mocked_dict_is_empty(self):
         with patch("app.rag.utils.EMBEDDING_CTX_LIMITS", {}):
             result = get_chunk_settings("any/model")
-        assert result == 128
-        assert not isinstance(result, dict)
+        assert result == {"chunk_size": 128, "chunk_overlap": 26}
+        assert isinstance(result, dict)
 
 
 # =============================================================================

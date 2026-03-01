@@ -6,6 +6,7 @@ from langgraph.graph.state import CompiledStateGraph
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings
+from app.db.chat import ChatRepository
 from app.routes.dependencies.chat_agent import get_chat_agent
 from app.routes.dependencies.db_session import get_db
 from app.routes.dependencies.llm import get_chat_model_service
@@ -25,7 +26,7 @@ def get_chat_service(
     settings: Annotated[Settings, Depends(get_app_settings)],
 ) -> ChatService:
     return ChatService(
-        db=db,
+        chat_repository=ChatRepository(db),
         chat_agent=chat_agent,
         retrieval_service=retrieval_service,
         chat_model_service=chat_model_service,

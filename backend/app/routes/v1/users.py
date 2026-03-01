@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.routes.dependencies.db_session import get_db
 from app.db.models import User, UserRole
 from app.routes.dependencies.auth import get_current_user
 from app.schemas.user import UserDeleteResponse, UserRead, UserUpdate

@@ -25,9 +25,13 @@ class TestAuthEndpoints:
         assert "id" in data
         
         # Verify in DB
-        user = db.query(User).filter(User.email == email).first()
+        from tests.api.conftest import TestingSessionLocal
+        
+        session = TestingSessionLocal()
+        user = session.query(User).filter(User.email == email).first()
         assert user is not None
         assert verify_password("strongpassword123", user.hashed_password)
+        session.close()
 
     def test_signup_existing_email(self, client: TestClient, db: Session):
         # Already created user in conftest => test@example.com

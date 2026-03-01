@@ -10,6 +10,18 @@ class TestUserEndpoints:
         assert data["email"] == "test@example.com"
 
     def test_patch_current_user(self, client: TestClient):
+        # Create a new user so we aren't modifying the shared dev user which
+        # could cause tests to interfere with each other
+        client.post(
+            "/v1/auth/signup",
+            json={"email": "patchuser@example.com", "password": "123", "name": "user"},
+        )
+        
+        # We need to simulate being logged in as this user for me endpoint
+        # The test app overrides get_current_user but lets modify the endpoint directly
+        # or use a different endpoint to avoid this hassle if patch updates email.
+        # It's an issue with duplicate key, which implies either they are trying to
+        # update the email, or another test created this user and it clashes.
         response = client.patch(
             "/v1/users/me",
             json={"name": "Updated Test Name", "occupation": "Physician"},

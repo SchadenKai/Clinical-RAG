@@ -111,12 +111,14 @@ class ChunkerFactory:
 class ChunkerService:
     def __init__(
         self,
-        app_settings: Settings,
+        app_settings: Settings | None,
         tokenizer_service: TokenizerService,
         chunker_factory: ChunkerFactory | None = None,
     ):
-        self.app_settings: Settings = app_settings
-        self.embedding_model: str = self.app_settings.embedding_model
+        self.app_settings = app_settings
+        self.embedding_model: str = (
+            self.app_settings.embedding_model if self.app_settings else "text-embedding-3-small"
+        )
         self.tokenizer_service: TokenizerService = tokenizer_service
 
         # Resolve default chunk parameters and tokenizer once at init

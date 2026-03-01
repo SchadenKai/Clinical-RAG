@@ -18,16 +18,32 @@ import sqlalchemy.dialects.postgresql as _pg
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import String, create_engine
+from sqlalchemy.types import TypeDecorator
 from sqlalchemy.orm import sessionmaker
 
 
-class _UUIDAsString(String):
+class _UUIDAsString(TypeDecorator):
     """postgresql.UUID stand-in that works on SQLite."""
 
+    impl = String
+    cache_ok = True
+
     def __init__(self, as_uuid=False, **kwargs):
+        self.as_uuid = as_uuid
         kwargs.pop("length", None)
         super().__init__(length=36, **kwargs)
 
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return value
+        return str(value)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return value
+        if self.as_uuid:
+            return _uuid.UUID(value)
+        return value
 
 _pg.UUID = _UUIDAsString  # type: ignore[attr-defined]
 
@@ -159,11 +175,12 @@ test_app.include_router(v1_router)
 
 def _fake_chat_service():
     """Mocked ChatService — no real LLM/Milvus connections."""
+    from app.db.chat import ChatRepository
     from app.services.chat import ChatService
 
     _db = TestingSessionLocal()
     return ChatService(
-        db=_db,
+        chat_repository=ChatRepository(_db),
         chat_agent=MagicMock(),
         retrieval_service=MagicMock(),
         chat_model_service=MagicMock(client=MagicMock()),

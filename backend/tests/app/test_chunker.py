@@ -201,9 +201,9 @@ class TestChunkerServiceInit:
         mock_tokenizer_svc = mocker.Mock(spec=TokenizerService)
         mock_tokenizer_svc.embedding_tokenizer = MagicMock(name="tok")
         mock_settings = mocker.Mock(spec=Settings)
+        mock_settings.embedding_model = "text-embedding-3-small"
 
         svc = ChunkerService(
-            embedding_model="text-embedding-3-small",
             app_settings=mock_settings,
             tokenizer_service=mock_tokenizer_svc,
         )
@@ -223,10 +223,10 @@ class TestChunkerServiceInit:
         mock_tokenizer_svc = mocker.Mock(spec=TokenizerService)
         mock_tokenizer_svc.embedding_tokenizer = MagicMock()
         mock_settings = mocker.Mock(spec=Settings)
+        mock_settings.embedding_model = "text-embedding-3-small"
         custom_factory = ChunkerFactory(chunk_size=999, chunk_overlap=99)
 
         svc = ChunkerService(
-            embedding_model="text-embedding-3-small",
             app_settings=mock_settings,
             tokenizer_service=mock_tokenizer_svc,
             chunker_factory=custom_factory,
@@ -248,9 +248,9 @@ class TestChunkerServiceGet:
             mock_tokenizer_svc.embedding_tokenizer = MagicMock()
             mock_settings = mocker.Mock(spec=Settings)
             mock_settings.chunk_strategy = "recursive"
+            mock_settings.embedding_model = "text-embedding-3-small"
 
             svc = ChunkerService(
-                embedding_model="text-embedding-3-small",
                 app_settings=mock_settings,
                 tokenizer_service=mock_tokenizer_svc,
             )
@@ -312,9 +312,9 @@ class TestChunkerServiceChunkerProperty:
             mock_tokenizer_svc.embedding_tokenizer = MagicMock()
             mock_settings = mocker.Mock(spec=Settings)
             mock_settings.chunk_strategy = "markdown"
+            mock_settings.embedding_model = "text-embedding-3-small"
 
             svc = ChunkerService(
-                embedding_model="text-embedding-3-small",
                 app_settings=mock_settings,
                 tokenizer_service=mock_tokenizer_svc,
             )
@@ -335,7 +335,6 @@ class TestChunkerServiceChunkerProperty:
             mock_tokenizer_svc.embedding_tokenizer = MagicMock()
 
             svc = ChunkerService(
-                embedding_model="text-embedding-3-small",
                 app_settings=None,
                 tokenizer_service=mock_tokenizer_svc,
             )

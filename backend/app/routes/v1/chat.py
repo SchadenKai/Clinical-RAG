@@ -30,20 +30,20 @@ def send_message(
     agent_id: str = Query("general", description="ID of the agent to use"),
 ):
     # 1. Look up agent in DB
-    agent_config = chat_service.get_agent(agent_id)
+    agent_config = chat_service.chat_repository.get_agent(agent_id)
     if not agent_config:
         if agent_id == "general":
             agent_config = Agent(id="general", name="General Chat", tools=[])
-            chat_service.db.add(agent_config)
-            chat_service.db.commit()
-            chat_service.db.refresh(agent_config)
+            chat_service.chat_repository.db.add(agent_config)
+            chat_service.chat_repository.db.commit()
+            chat_service.chat_repository.db.refresh(agent_config)
         elif agent_id == "clinical_rag":
             agent_config = Agent(
                 id="clinical_rag", name="Clinical RAG", tools=["retrieval_tool"]
             )
-            chat_service.db.add(agent_config)
-            chat_service.db.commit()
-            chat_service.db.refresh(agent_config)
+            chat_service.chat_repository.db.add(agent_config)
+            chat_service.chat_repository.db.commit()
+            chat_service.chat_repository.db.refresh(agent_config)
         else:
             raise HTTPException(status_code=404, detail="Agent not found")
 
@@ -67,7 +67,7 @@ def list_sessions(
     from app.db.models import ChatConversation
 
     sessions = (
-        chat_service.db.query(ChatConversation)
+        chat_service.chat_repository.db.query(ChatConversation)
         .filter(ChatConversation.user_id == current_user.id)
         .order_by(ChatConversation.created_at.desc())
         .all()
@@ -85,7 +85,9 @@ def create_session(
     current_user: Annotated[object, Depends(get_current_user)],
     title: str = Query("New Chat"),
 ):
-    conv = chat_service.create_or_get_conversation(user_id=current_user.id, title=title)
+    conv = chat_service.chat_repository.create_or_get_conversation(
+        user_id=current_user.id, title=title
+    )
     return {"session_id": conv.id, "title": conv.title}
 
 
@@ -99,7 +101,7 @@ def update_session(
     from app.db.models import ChatConversation
 
     conv = (
-        chat_service.db.query(ChatConversation)
+        chat_service.chat_repository.db.query(ChatConversation)
         .filter(
             ChatConversation.id == session_id,
             ChatConversation.user_id == current_user.id,
@@ -110,8 +112,8 @@ def update_session(
         raise HTTPException(status_code=404, detail="Session not found")
 
     conv.title = payload.title
-    chat_service.db.commit()
-    chat_service.db.refresh(conv)
+    chat_service.chat_repository.db.commit()
+    chat_service.chat_repository.db.refresh(conv)
 
     return {"session_id": conv.id, "title": conv.title}
 
@@ -122,7 +124,7 @@ def get_session_messages(
     chat_service: Annotated[ChatService, Depends(get_chat_service)],
     current_user: Annotated[object, Depends(get_current_user)],
 ):
-    messages = chat_service.get_conversation_history(session_id)
+    messages = chat_service.chat_repository.get_conversation_history(session_id)
     return {
         "messages": [
             {
@@ -146,7 +148,7 @@ def delete_session(
     from app.db.models import ChatConversation
 
     conv = (
-        chat_service.db.query(ChatConversation)
+        chat_service.chat_repository.db.query(ChatConversation)
         .filter(
             ChatConversation.id == session_id,
             ChatConversation.user_id == current_user.id,
@@ -156,8 +158,8 @@ def delete_session(
     if not conv:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    chat_service.db.delete(conv)
-    chat_service.db.commit()
+    chat_service.chat_repository.db.delete(conv)
+    chat_service.chat_repository.db.commit()
     return {"message": "Session deleted"}
 
 
@@ -172,7 +174,7 @@ def delete_message(
 
     # Verify ownership
     conv = (
-        chat_service.db.query(ChatConversation)
+        chat_service.chat_repository.db.query(ChatConversation)
         .filter(
             ChatConversation.id == session_id,
             ChatConversation.user_id == current_user.id,
@@ -183,7 +185,7 @@ def delete_message(
         raise HTTPException(status_code=404, detail="Session not found")
 
     msg = (
-        chat_service.db.query(ChatMessage)
+        chat_service.chat_repository.db.query(ChatMessage)
         .filter(
             ChatMessage.id == msg_id,
             ChatMessage.conversation_id == session_id,
@@ -193,6 +195,6 @@ def delete_message(
     if not msg:
         raise HTTPException(status_code=404, detail="Message not found")
 
-    chat_service.db.delete(msg)
-    chat_service.db.commit()
+    chat_service.chat_repository.db.delete(msg)
+    chat_service.chat_repository.db.commit()
     return {"message": "Message deleted"}
