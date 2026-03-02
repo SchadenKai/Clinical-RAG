@@ -3,6 +3,7 @@ from pathlib import Path
 from docling.datamodel.accelerator_options import AcceleratorDevice, AcceleratorOptions
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import (
+    OcrAutoOptions,
     PdfPipelineOptions,
     TableFormerMode,
     TableStructureOptions,
@@ -11,7 +12,7 @@ from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling_core.types.doc.document import DoclingDocument
 
 
-def document_converter(path: Path) -> DoclingDocument:
+def doc_converter(path: Path) -> DoclingDocument:
     pdf_pipeline_options = PdfPipelineOptions(
         accelerator_options=AcceleratorOptions(device=AcceleratorDevice.AUTO),
         do_ocr=True,
@@ -24,6 +25,7 @@ def document_converter(path: Path) -> DoclingDocument:
         table_structure_options=TableStructureOptions(
             do_cell_matching=True, mode=TableFormerMode.ACCURATE
         ),
+        ocr_options=OcrAutoOptions(lang=["eng"], force_full_page_ocr=False),
     )
     doc_converter = DocumentConverter(
         format_options={
