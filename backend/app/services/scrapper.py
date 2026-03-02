@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from crawl4ai import (
     AsyncWebCrawler,
     BrowserConfig,
@@ -8,8 +6,6 @@ from crawl4ai import (
     CrawlResult,
     JsonCssExtractionStrategy,
 )
-from docling.document_converter import DocumentConverter
-from docling_core.types.doc.document import DoclingDocument
 from playwright.async_api import async_playwright
 
 
@@ -132,11 +128,6 @@ async def who_pdf_list_scrapper(website_url: str) -> None:
     async with AsyncWebCrawler(config=browser_config) as crawler:
         response: CrawlResult = await crawler.arun(url=website_url, config=run_config)
         return response.extracted_content
-
-
-def document_extractor(path: Path) -> DoclingDocument:
-    doc_converter = DocumentConverter()
-    return doc_converter.convert(path).document
 
 
 async def structured_output_scrapper(url: str) -> CrawlResult:
