@@ -11,6 +11,8 @@
 [![Python 3.13+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Built with LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-orange)](https://github.com/langchain-ai/langgraph)
 
+![Preview Image of Chat Feature](./docs/images/chat_interface.png)
+
 **Clinical-RAG** is a production-grade, citation-backed AI system designed to bridge the "Trust Gap" in medical information retrieval. It provides clinicians and public health professionals with a verifiable, real-time interface to interact with the latest technical guidelines from the **CDC (Centers for Disease Control and Prevention)** and **WHO (World Health Organization)**.
 
 ---
@@ -55,10 +57,3 @@ Designed as a high-performance microservice, this project demonstrates a "Produc
 - V1: End-to-end RAG with CDC/WHO citation enforcement (Current).
 - V2: Automated ingestion of MMWR weekly updates and document versioning.
 - V3: A/B testing framework for different retrieval strategies (Top-K vs. MMR).
-
-## 🛠 Current Progress (Iteration 1)
-- [x] Initial Architecture Design
-- [x] Vector Database Schema (Milvus)
-- [x] CDC/WHO Document Ingestion Pipeline
-- [x] Safety Router implementation
-- [x] Evaluation Harness (DeepEval integration)
