@@ -1,11 +1,11 @@
 import time
 
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.embeddings import Embeddings, FakeEmbeddings
 from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
 from langchain_nebius.embeddings import NebiusEmbeddings
 from langchain_nomic.embeddings import NomicEmbeddings
 from langchain_openai.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
-from langchain_community.embeddings import HuggingFaceEmbeddings
 
 from app.core.config import Settings, settings
 from app.rag.models import EmbeddingResponseModel
@@ -45,8 +45,6 @@ class EmbeddingService:
                     **self.config, base_url="https://openrouter.ai/api/v1"
                 )
             elif self.provider == "huggingface":
-                # For HuggingFace, model is passed to model_name argument.
-                # Remove it from config first since HuggingFaceEmbeddings doesn't accept "model".
                 hf_config = dict(self.config)
                 model_n = hf_config.pop("model", None)
                 self._client = HuggingFaceEmbeddings(model_name=model_n, **hf_config)
