@@ -1,0 +1,45 @@
+id,query,expected_answer,metadata,response,experiment_name,model_name,temperature
+5,In what year did the Apollo 11 moon landing occur?,1969,,"**Apollo 11, the first mission to land humans on the Moon, occurred in 1969.**
+
+Here are a few key details:
+
+- **Year:** 1969
+- **Launch Date:** July 16, 1969
+- **Lunar Landing (first human steps):** July 20, 1969 (landing time)
+- **Famous phrase upon landing:** ""The Eagle has landed.""
+- **First step on the Moon:** July 21, 1969 (UTC), by Neil Armstrong, followed by Buzz Aldrin.
+
+The achievement was a historic moment, part of the **Apollo 11** mission, making Neil Armstrong and Buzz Aldrin the first and second humans to walk on the lunar surface, while Michael Collins remained in the Command Module orbiting the Moon.",gpt40_temp_1.0,gpt40,1.0
+3,Who wrote 'To Kill a Mockingbird'?,Harper Lee,,"**Harper Lee** is the author of ***To Kill a Mockingbird* (published in 1960)**.
+
+The novel is a classic of modern American literature, renowned for its exploration of moral and ethical issues like racial injustice and moral growth. It won the Pulitzer Prize in 1961.
+
+**Key Details:**
+*   **Full Name:** Nelle Harper Lee
+*   **Published:** 1960 by J.B. Lippincott & Co.
+*   **Setting:** The fictional town of Maycomb, Alabama, during the Great Depression (1933-35).
+*   It was Lee's only published novel for 55 years, until the publication of ***Go Set a Watchman*** in 2015 (a manuscript that was essentially the first draft of *Mockingbird*, written from a different perspective).
+
+The novel was famously adapted into an acclaimed 1962 film starring Gregory Peck, which won three Academy Awards, including Best Actor for Gregory Peck",gpt40_temp_1.0,gpt40,1.0
+6,What is the speed of light in a vacuum?,"Approximately 299,792 kilometers per second","{'category': 'physics', 'exact_value': 299792458}","The speed of light in a vacuum is defined to be exactly **299,792,458 metres per second** (approximately **3.00 × 10^8 metres per second**). 
+
+### Key Points
+- This is a **fundamental constant of nature** and is typically denoted by the symbol **c**.
+- As of the 2019 redefinition of SI units, *c* is now set as an exact constant, and the metre is defined in terms of the distance light travels in a specific fraction of a second.
+
+### Historical Note
+The speed of light was not always so precisely known. In 1676, Danish astronomer Ole Rømer first estimated it by observing the apparent change in the orbital period of Jupiter’s moon Io.
+
+In a vacuum, according to Einstein's theory of special relativity, light and all electromagnetic radiation are constrained by this speed, making *c* the cosmic speed limit for all matter and information.",gpt40_temp_1.0,gpt40,1.0
+4,What is the largest planet in our solar system?,Jupiter,{'category': 'astronomy'},"**Jupiter** is the largest planet in our solar system. For comparison:  
+
+- **Mass:** 1.89 × 10²⁷ kg (about 317 times Earth's mass).  
+- **Diameter:** 139,820 km at the equator, making it about 11 times the width of Earth.  
+- **Volume:** Large enough to fit about 1,300 Earths inside it.  
+- Although massive, it is a gas giant made mostly of hydrogen and helium.
+
+Jupiter’s size has played a key role in shaping the solar system and deflecting potential comet and asteroid impacts.  
+
+Let me know if you’d like deeper insights into Jupiter’s role in the solar system!",gpt40_temp_1.0,gpt40,1.0
+2,What is the chemical symbol for gold?,Au,"{'category': 'science', 'difficulty': 'easy'}","The chemical symbol for gold is **Au**, from the Latin *aurum*, meaning ""gold.""",gpt40_temp_1.0,gpt40,1.0
+1,What is the capital of France?,Paris,,The capital of France is **Paris**.,gpt40_temp_1.0,gpt40,1.0

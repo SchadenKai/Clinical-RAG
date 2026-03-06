@@ -1,0 +1,53 @@
+id,query,expected_answer,metadata,response,experiment_name,model_name,temperature
+6,What is the speed of light in a vacuum?,"Approximately 299,792 kilometers per second","{'category': 'physics', 'exact_value': 299792458}","The speed of light in a perfect **vacuum** is exactly:
+
+**299,792,458 metres per second**
+
+It is often rounded to about **3.00 × 10⁸ m/s** for convenience.
+
+A few key details:
+* The speed of light depends on the medium – it’s fastest in a vacuum.  
+* In other materials (like glass or water), light travels more slowly.
+* This astonishing speed (almost 300 million meters per second) is why light from the Sun takes only about **8 minutes and 20 seconds** to reach Earth.
+* In a vacuum, it’s identical for all types of light (gamma rays, radio waves, and visible light all travel at the same speed **c** in a vacuum).
+
+It is also a fundamental physical constant, forming the definition of the meter:  
+**One meter** is defined as the distance that light travels in a vacuum in **1/299,792,458 of a second**.  
+  
+So whenever you’re asked this in physics, it’s most common and accurate to state that  
+**c** in a vacuum is **2.99792458×10^8 m/s**, and it’s the fastest speed at which any known physical information can travel according to Einstein’s theory of relativity.",gpt40_temp_1.0,gpt40,1.0
+1,What is the capital of France?,Paris,,"The capital of France is **Paris**.
+
+It also serves as a major global center for art, fashion, gastronomy, science, and culture.",gpt40_temp_1.0,gpt40,1.0
+3,Who wrote 'To Kill a Mockingbird'?,Harper Lee,,"**Harper Lee** wrote the American classic *To Kill a Mockingbird.* It was her one and only published book for more than half a century, for which she was awarded the Pulitzer Prize in 1961.
+
+Thus, the answer is **Harper Lee**.
+
+Here are a few more key details:
+*   **Full Name:** Nelle Harper Lee (She went by her middle name, ""Harper Lee,"" for her writing and **Nelle Lee** in daily life).
+*   **Year Published:** 1960. The book was an instant and massive success.
+*   **Her Other Work:** The only other book published after *To Kill a Mockingbird* during her lifetime was her 2015 novel *Go Set a Watchman.* Initially marketed as a sequel, it was actually an early draft/previous version of the characters that she had set aside. It was published amid much controversy and was widely read as a study of the character Atticus Finch in an entirely different light.
+*   **Awards:** In addition to the Pulitzer, Lee was awarded the Presidential Medal of Freedom in 2007 for her contribution to literature.
+
+So, in short, the author of *To Kill a Mockingbird* is **Harper Lee**.",gpt40_temp_1.0,gpt40,1.0
+4,What is the largest planet in our solar system?,Jupiter,{'category': 'astronomy'},"That's an easy one! The **largest planet in our solar system is Jupiter**.
+
+Here are a few key facts about our solar system's giant:
+
+*   **By far the biggest:** It is more massive than all the other planets in our solar system **combined** (over 300 times the mass of Earth).
+*   **Its most famous feature:** The Great Red Spot, a massive storm that's much larger than the entire planet Earth, has been raging for centuries.
+*   **More planet than star:** It is not solid; it's a **gas giant** composed mostly of hydrogen and helium.
+*   **A mini solar system:** Jupiter is like a mini solar system in its own right, with at least 95 known moons, including the 4 large ""Galilean moons"" discovered by Galileo: Io, Europa, Ganymede (the largest moon in the solar system), and Callisto.
+
+**In short: Jupiter is the undisputed king of the planets in our solar system.**  
+Its mass is a staggering 1.898 × 10^27 kg, which is over 2.5 times that of *all the other planets combined*!",gpt40_temp_1.0,gpt40,1.0
+2,What is the chemical symbol for gold?,Au,"{'category': 'science', 'difficulty': 'easy'}","The chemical symbol for gold is **Au**.  
+
+It comes from the Latin word for gold, **aurum**, which is why the periodic table entry for gold is **Au**.",gpt40_temp_1.0,gpt40,1.0
+5,In what year did the Apollo 11 moon landing occur?,1969,,"The Apollo 11 moon landing occurred in **1969**.
+
+The historic mission, which saw **Neil Armstrong** and Buzz Aldrin become the first humans to walk on the moon, occurred in the **Sea of Tranquility** on **July 20, 1969** (with the infamous lunar landing and Armstrong's first step happening on **July 21, 1969, UTC**).
+
+It was a seminal moment of the Space Race and is often considered one of the greatest achievements in human history. Neil Armstrong's famous words from the Moon are: *""That's one small step for a man, one giant leap for mankind.""*
+
+Is there anything else about the historic Apollo missions you’re curious about? I can tell you more about the mission, the astronauts, or what it meant for space exploration!",gpt40_temp_1.0,gpt40,1.0

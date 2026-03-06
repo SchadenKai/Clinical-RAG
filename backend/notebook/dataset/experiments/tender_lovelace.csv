@@ -1,0 +1,30 @@
+id,query,expected_answer,metadata,response,experiment_name,model_name,temperature
+5,In what year did the Apollo 11 moon landing occur?,1969,,"The Apollo 11 moon landing **occurred in 1969**.
+
+Here are the key details of the historic mission:
+- **Launch Date:** July 16, 1969
+- **Lunar Landing:** July 20, 1969 (landing in the Sea of Tranquility)
+- **Famous Quote:** Neil Armstrong's ""That's one small step for [a] man, one giant leap for mankind.""
+
+The successful landing and moonwalk, achieved just eight years after President Kennedy's 1961
+challenge, was a monumental achievement for NASA and the Apollo space program.",gpt40_temp_1.0,gpt40,1.0
+4,What is the largest planet in our solar system?,Jupiter,{'category': 'astronomy'},"That’s easy — the largest planet in our solar system is **Jupiter**.  
+It has a diameter roughly 11 times wider than Earth and a mass more than twice that of all the other planets combined.  
+
+Interestingly, if you gathered all other planets together, Jupiter would **still** be over 2.5 times more massive than all of them!",gpt40_temp_1.0,gpt40,1.0
+6,What is the speed of light in a vacuum?,"Approximately 299,792 kilometers per second","{'category': 'physics', 'exact_value': 299792458}","The speed of light in a **vacuum** is a fundamental constant of nature and is defined as:  
+
+\[
+c = 299,792,458 \ \text{meters per second}
+\]
+
+This value is **exact**, because since 1983, the meter is defined based on the speed of light, making \(c\) fixed at **exactly 299,792,458 m/s** by international agreement.  
+Thus:
+\[
+c \approx 3.00 \times 10^8 \ \text{m/s}  
+\]
+in approximate scientific notation.",gpt40_temp_1.0,gpt40,1.0
+3,Who wrote 'To Kill a Mockingbird'?,Harper Lee,,"**Harper Lee** is the author of ***To Kill a Mockingbird***, first published in 1960. The novel is a classic of modern American literature and won the Pulitzer Prize for Fiction in 1961. The story is a beloved and powerful exploration of racial inequality and injustice in the American South, told through the eyes of the young narrator, Scout Finch.",gpt40_temp_1.0,gpt40,1.0
+1,What is the capital of France?,Paris,,"The capital of France is **Paris**. Known for its rich history, art, fashion, and cultural influence, Paris is also the country's most populous city.",gpt40_temp_1.0,gpt40,1.0
+2,What is the chemical symbol for gold?,Au,"{'category': 'science', 'difficulty': 'easy'}","The chemical symbol for **gold** is **Au**.  
+",gpt40_temp_1.0,gpt40,1.0
