@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     llm_api_key: str = os.environ.get("LLM_API_KEY", openai_api_key)
     llm_provider: str = os.environ.get("LLM_PROVIDER", "openai")
     llm_model_name: str = os.environ.get("LLM_MODEL_NAME", "gpt-4o")
+    llm_temperature: float = os.environ.get("LLM_TEMPERATURE", 0.7)
 
     milvus_url: str = os.environ.get("MILVUS_URL", "http://localhost:19530")
     milvus_db_name: str = os.environ.get("MILVUS_DB_NAME", "cdc_rag")

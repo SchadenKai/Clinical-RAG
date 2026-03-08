@@ -22,27 +22,35 @@ class ChatModelService:
             return self._client
         if self.provider == "openai":
             self._client = ChatOpenAI(
-                model=self.model_name, api_key=settings.llm_api_key
+                model=self.model_name,
+                api_key=settings.llm_api_key,
+                temperature=settings.llm_temperature,
             )
         elif self.provider == "anthropic":
             self._client = ChatAnthropic(
-                model_name=self.model_name, api_key=settings.llm_api_key
+                model_name=self.model_name,
+                api_key=settings.llm_api_key,
+                temperature=settings.llm_temperature,
             )
         elif self.provider == "nebius":
             self._client = ChatNebius(
                 api_key=settings.llm_api_key,
                 model=self.model_name,
+                temperature=settings.llm_temperature,
             )
         elif self.provider == "gemini":
             self._client = ChatGoogleGenerativeAI(
-                api_key=settings.llm_api_key, model=self.model_name
+                api_key=settings.llm_api_key,
+                model=self.model_name,
             )
         elif self.provider == "openrouter":
             self._client = ChatOpenRouter(
-                api_key=settings.llm_api_key, model=self.model_name
+                api_key=settings.llm_api_key,
+                model=self.model_name,
+                temperature=settings.llm_temperature,
             )
         else:
-            self._client = ChatOpenAI(model=self.model_name)
+            raise ValueError(f"Provider {self.provider} is not available.")
         app_logger.info(f"Selected model: {self._client.get_name()}")
         return self._client
 
