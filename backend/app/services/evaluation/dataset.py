@@ -1,4 +1,3 @@
-
 from deepeval.dataset.golden import Golden
 from deepeval.models import DeepEvalBaseModel, GPTModel
 from deepeval.models.base_model import DeepEvalBaseEmbeddingModel
