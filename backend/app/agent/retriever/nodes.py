@@ -99,6 +99,7 @@ def embed_query(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState
 
 from pymilvus import AnnSearchRequest, RRFRanker
 
+
 def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
     if runtime.context.db_client is None:
         raise ValueError("Missing vector database client")
@@ -112,23 +113,20 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
         state.embedded_query = [state.embedded_query]
     start_time = time.time()
     runtime.context.db_client.use_database(runtime.context.settings.milvus_db_name)
-    
+
     dense_req = AnnSearchRequest(
         data=state.embedded_query,
         anns_field="vector",
-        param={
-            "metric_type": "IP",
-            "params": {"radius": 0.5, "range_filter": 1.0}
-        },
-        limit=3
+        param={"metric_type": "IP", "params": {"radius": 0.5, "range_filter": 1.0}},
+        limit=3,
     )
     sparse_req = AnnSearchRequest(
         data=[state.input_query],
         anns_field="sparse_vector",
         param={"metric_type": "BM25"},
-        limit=3
+        limit=3,
     )
-    
+
     res = runtime.context.db_client.hybrid_search(
         collection_name=runtime.context.settings.milvus_collection_name,
         reqs=[dense_req, sparse_req],

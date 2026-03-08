@@ -1,4 +1,12 @@
-from pymilvus import DataType, IndexType, MilvusClient, Function, FunctionType, AnnSearchRequest, RRFRanker
+from pymilvus import (
+    DataType,
+    IndexType,
+    MilvusClient,
+    Function,
+    FunctionType,
+    AnnSearchRequest,
+    RRFRanker,
+)
 
 from app.core.config import settings
 from app.logger import app_logger
@@ -166,13 +174,13 @@ class VectorClient:
             ],
             anns_field="vector",
             param={"metric_type": "IP"},
-            limit=3
+            limit=3,
         )
         sparse_req = AnnSearchRequest(
             data=[query_text],
             anns_field="sparse_vector",
             param={"metric_type": "BM25"},
-            limit=3
+            limit=3,
         )
 
         results = self.client.hybrid_search(
