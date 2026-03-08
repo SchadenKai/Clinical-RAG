@@ -50,10 +50,13 @@ class ChatModelService:
         def test_chat_model(self) -> None:
             res = self.client.invoke("")
             app_logger.info(f"Testing chat model results: {res.content}")
-    
-    
+
+
 class RerankScore(BaseModel):
-    score: float = Field(description="Relevance score of the document to the query, from 0.0 to 10.0")
+    score: float = Field(
+        description="Relevance score of the document to the query, from 0.0 to 10.0"
+    )
+
 
 class RerankerService:
     def __init__(self, provider: str, model_name: str, api_key: str):
@@ -65,30 +68,31 @@ class RerankerService:
     def rerank(self, query: str, documents: list[dict], top_k: int = 5) -> list[dict]:
         if not documents:
             return documents
-            
+
         if self.provider == "slm":
             if not self._slm_model:
                 from sentence_transformers import CrossEncoder
+
                 self._slm_model = CrossEncoder(self.model_name)
-            
+
             pairs = [[query, doc.get("text", "")] for doc in documents]
             scores = self._slm_model.predict(pairs)
-            
+
             for i, doc in enumerate(documents):
                 doc["rerank_score"] = float(scores[i])
-                
+
             documents.sort(key=lambda x: x.get("rerank_score", 0.0), reverse=True)
             return documents[:top_k]
-            
+
         elif self.provider == "llm":
             chat_service = ChatModelService(
-                provider=settings.llm_provider, 
-                model_name=self.model_name, 
-                api_key=self.api_key or settings.llm_api_key
+                provider=settings.llm_provider,
+                model_name=self.model_name,
+                api_key=self.api_key or settings.llm_api_key,
             )
             chat_model = chat_service.client
             structured_model = chat_model.with_structured_output(schema=RerankScore)
-            
+
             for doc in documents:
                 prompt = (
                     f"Query: '{query}'\n"
@@ -97,15 +101,18 @@ class RerankerService:
                     "Provide a score from 0.0 to 10.0 where 10.0 is highly relevant."
                 )
                 from langchain_core.messages import HumanMessage
+
                 try:
                     res = structured_model.invoke([HumanMessage(content=prompt)])
                     doc["rerank_score"] = res.score if res else 0.0
                 except Exception as e:
                     app_logger.error(f"LLM reranking failed for a document: {e}")
                     doc["rerank_score"] = 0.0
-                    
+
             documents.sort(key=lambda x: x.get("rerank_score", 0.0), reverse=True)
             return documents[:top_k]
         else:
-            app_logger.warning(f"Unknown reranker provider: {self.provider}. Returning original documents.")
+            app_logger.warning(
+                f"Unknown reranker provider: {self.provider}. Returning original documents."
+            )
             return documents[:top_k]

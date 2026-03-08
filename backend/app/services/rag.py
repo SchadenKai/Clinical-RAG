@@ -150,6 +150,7 @@ class RetrievalService:
         self.chat_model_service: ChatModelService = chat_model_service
         self.settings: Settings = settings
         from app.services.llm.factory import RerankerService
+
         self.reranker_service = RerankerService(
             provider=self.settings.reranker_provider,
             model_name=self.settings.reranker_model,

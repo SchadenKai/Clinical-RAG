@@ -100,9 +100,7 @@ class TestIndexingRAGService:
     def test_upload_file(self, indexing_service: IndexingService):
         s3_client = indexing_service.s3_service.client
         s3_client.upload_fileobj("test", "test", "test")
-        s3_client.upload_fileobj.assert_called_once_with(
-            "test", "test", "test"
-        )
+        s3_client.upload_fileobj.assert_called_once_with("test", "test", "test")
 
     def test_ingestion_return_run_metadata_only(
         self, indexing_service: IndexingService
