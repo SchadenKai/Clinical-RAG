@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import torch
 from crawl4ai import (
     AsyncWebCrawler,
     BrowserConfig,
