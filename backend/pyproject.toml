@@ -26,6 +26,7 @@ dependencies = [
     "langchain-openrouter>=0.0.2",
     "langchain-text-splitters>=1.1.0",
     "langgraph>=1.0.6",
+    "milvus-model>=0.2.12",
     "orjson>=3.11.5",
     "playwright>=1.57.0",
     "pydantic>=2.12.5",

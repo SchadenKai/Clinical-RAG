@@ -97,6 +97,8 @@ def embed_query(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState
     return state.model_copy(update={"embedded_query": embedding, "run_metadata": res})
 
 
+from pymilvus import AnnSearchRequest, RRFRanker
+
 def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
     if runtime.context.db_client is None:
         raise ValueError("Missing vector database client")
@@ -110,21 +112,33 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
         state.embedded_query = [state.embedded_query]
     start_time = time.time()
     runtime.context.db_client.use_database(runtime.context.settings.milvus_db_name)
-    res = runtime.context.db_client.search(
-        collection_name=runtime.context.settings.milvus_collection_name,
-        anns_field="vector",
+    
+    dense_req = AnnSearchRequest(
         data=state.embedded_query,
+        anns_field="vector",
+        param={
+            "metric_type": "IP",
+            "params": {"radius": 0.5, "range_filter": 1.0}
+        },
+        limit=3
+    )
+    sparse_req = AnnSearchRequest(
+        data=[state.input_query],
+        anns_field="sparse_vector",
+        param={"metric_type": "BM25"},
+        limit=3
+    )
+    
+    res = runtime.context.db_client.hybrid_search(
+        collection_name=runtime.context.settings.milvus_collection_name,
+        reqs=[dense_req, sparse_req],
+        ranker=RRFRanker(),
         output_fields=["text", "category", "source"],
         limit=3,
-        # TODO: connect this later in agent context
-        search_params={
-            "radius": 0.5,  # Lower score threshold
-            "range_filter": 1.0,  # Upper score threshold
-        },
     )
     search_duration_ms = (time.time() - start_time) * 1000
     res = res[0]
-    res = [{**doc.fields, "score": doc.score * 100, "id": doc.id} for doc in res]
+    res = [{**doc.entity, "score": doc.distance, "id": doc.id} for doc in res]
     sources = [doc["source"] for doc in res]
     return state.model_copy(
         update={

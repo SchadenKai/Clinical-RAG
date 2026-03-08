@@ -1,4 +1,4 @@
-from pymilvus import DataType, IndexType, MilvusClient
+from pymilvus import DataType, IndexType, MilvusClient, Function, FunctionType, AnnSearchRequest, RRFRanker
 
 from app.core.config import settings
 from app.logger import app_logger
@@ -73,12 +73,25 @@ class VectorClient:
             field_name="text",
             datatype=DataType.VARCHAR,
             max_length=settings.text_field_max_length,
+            enable_analyzer=True,
+        )
+        schema.add_field(
+            field_name="sparse_vector",
+            datatype=DataType.SPARSE_FLOAT_VECTOR,
         )
         schema.add_field(
             field_name="source",
             datatype=DataType.VARCHAR,
             max_length=settings.text_field_max_length,
         )
+
+        bm25_function = Function(
+            name="text_bm25_emb",
+            input_field_names=["text"],
+            output_field_names=["sparse_vector"],
+            function_type=FunctionType.BM25,
+        )
+        schema.add_function(bm25_function)
 
         print("[INFO] Creating index params...")
         index_params = client.prepare_index_params()
@@ -87,6 +100,12 @@ class VectorClient:
             index_name="vector_idx",
             index_type=IndexType.HNSW,
             metric_type="IP",
+        )
+        index_params.add_index(
+            field_name="sparse_vector",
+            index_name="sparse_idx",
+            index_type="SPARSE_INVERTED_INDEX",
+            metric_type="BM25",
         )
         client.create_collection(
             collection_name=settings.milvus_collection_name,
@@ -136,16 +155,30 @@ class VectorClient:
 
         self.client.load_collection(collection_name=settings.milvus_collection_name)
 
-        results = self.client.search(
-            collection_name=settings.milvus_collection_name,
-            anns_field="vector",
+        query_text = "tectonic plate"
+        dense_req = AnnSearchRequest(
             data=[
                 self.embedding_service.embed_query(
-                    text="tectonic plate",
+                    text=query_text,
                     tokenizer=self.tokenizer_service,
                     event_name="smoke test query",
                 ).embedding
             ],
+            anns_field="vector",
+            param={"metric_type": "IP"},
+            limit=3
+        )
+        sparse_req = AnnSearchRequest(
+            data=[query_text],
+            anns_field="sparse_vector",
+            param={"metric_type": "BM25"},
+            limit=3
+        )
+
+        results = self.client.hybrid_search(
+            collection_name=settings.milvus_collection_name,
+            reqs=[dense_req, sparse_req],
+            ranker=RRFRanker(),
             limit=3,
             output_fields=["text", "metadata", "source"],
         )
