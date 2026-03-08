@@ -149,6 +149,12 @@ class RetrievalService:
         self.tokenizer_service: TokenizerService = tokenizer_service
         self.chat_model_service: ChatModelService = chat_model_service
         self.settings: Settings = settings
+        from app.services.llm.factory import RerankerService
+        self.reranker_service = RerankerService(
+            provider=self.settings.reranker_provider,
+            model_name=self.settings.reranker_model,
+            api_key=self.settings.reranker_api_key,
+        )
 
     def retrieve_documents(
         self,
@@ -166,6 +172,7 @@ class RetrievalService:
             tokenizer=self.tokenizer_service,
             db_client=db_client,
             chat_model=chat_model,
+            reranker=self.reranker_service,
             include_generation=is_llm_enabled,
             settings=self.settings,
         )
