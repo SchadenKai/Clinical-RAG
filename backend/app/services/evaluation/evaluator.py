@@ -38,7 +38,7 @@ class EvaluationPipeline:
         return self._deepeval_model
 
     @property
-    def metrics(self) -> tuple:
+    def rag_metrics(self) -> tuple:
         if self._answer_relevancy is None:
             self._answer_relevancy = AnswerRelevancyMetric(
                 model=self.deepeval_model, threshold=self.settings.rag_metrics_threshold
@@ -70,9 +70,9 @@ class EvaluationPipeline:
         )
 
     def evaluate(self, test_cases: list[LLMTestCase]) -> EvaluationResult:
-        metrics_list = list(self.metrics)
+        rag_metrics_list = list(self.rag_metrics)
         results = evaluate(
             test_cases=test_cases,
-            metrics=metrics_list,
+            metrics=rag_metrics_list,
         )
         return results
