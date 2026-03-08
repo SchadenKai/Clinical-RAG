@@ -47,9 +47,9 @@ class ChatModelService:
         app_logger.info(f"Selected model: {self._client.get_name()}")
         return self._client
 
-        def test_chat_model(self) -> None:
-            res = self.client.invoke("")
-            app_logger.info(f"Testing chat model results: {res.content}")
+    def test_chat_model(self) -> None:
+        res = self.client.invoke("")
+        app_logger.info(f"Testing chat model results: {res.content}")
 
 
 class RerankScore(BaseModel):
