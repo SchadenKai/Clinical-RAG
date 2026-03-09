@@ -277,7 +277,11 @@ async def cdc_pdf_url_list_oai(
                 app_logger.error(
                     "Malformed XML from OAI-PMH endpoint: %s | status=%s | base_url=%s | "
                     "params=%s | body_preview=%.200r",
-                    exc, resp.status_code, base_url, params, resp.text,
+                    exc,
+                    resp.status_code,
+                    base_url,
+                    params,
+                    resp.text,
                 )
                 break
 
@@ -322,7 +326,11 @@ async def cdc_pdf_url_list_oai(
                         }
                     )
 
-            if max_records is not None and max_records > 0 and len(records) >= max_records:
+            if (
+                max_records is not None
+                and max_records > 0
+                and len(records) >= max_records
+            ):
                 records = records[:max_records]
                 break
 
@@ -399,7 +407,9 @@ async def download_pdf_to_bytes(url: str, timeout: float = 60.0) -> bytes | None
             resp.raise_for_status()
             content_type = resp.headers.get("content-type", "")
             if "pdf" not in content_type and not url.lower().endswith(".pdf"):
-                app_logger.warning("Unexpected content-type %r for %s", content_type, url)
+                app_logger.warning(
+                    "Unexpected content-type %r for %s", content_type, url
+                )
                 return None
             return resp.content
     except Exception as e:

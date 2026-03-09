@@ -113,7 +113,9 @@ def merge_records_node(state: AgentState) -> dict:
     }
 
 
-async def download_and_upload_node(state: AgentState, runtime: Runtime[AgentContext]) -> dict:
+async def download_and_upload_node(
+    state: AgentState, runtime: Runtime[AgentContext]
+) -> dict:
     """
     Downloads each PDF and uploads it to MinIO S3.
 
@@ -168,7 +170,9 @@ async def download_and_upload_node(state: AgentState, runtime: Runtime[AgentCont
                 minio_key = minio_key[:-4] + f"_{content_hash}.pdf"
             else:
                 minio_key = minio_key + f"_{content_hash}"
-            app_logger.info("Key collision detected — using hash-suffixed key: %s", minio_key)
+            app_logger.info(
+                "Key collision detected — using hash-suffixed key: %s", minio_key
+            )
 
         # Upload to MinIO
         try:
@@ -188,7 +192,9 @@ async def download_and_upload_node(state: AgentState, runtime: Runtime[AgentCont
 
     app_logger.info(
         "Done. Uploaded: %d, Failed: %d, Skipped: %d",
-        len(uploaded_keys), len(failed_urls), len(skipped_urls),
+        len(uploaded_keys),
+        len(failed_urls),
+        len(skipped_urls),
     )
     return {
         "uploaded_keys": uploaded_keys,
