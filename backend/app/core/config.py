@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     lowest_score_threshold: float = 0.6
     highest_score_threshold: float = 1.0
 
+    # hybrid search config
+    search_limit: int = 3
+    rrf_k: int = 60
+    search_score_threshold: float = 0.01
+
     rag_metrics_threshold: float = 0.7
 
     # model config
