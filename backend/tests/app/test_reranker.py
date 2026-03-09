@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from app.agent.retriever.nodes import rerank_node
 from app.agent.retriever.state import AgentState

@@ -1,7 +1,14 @@
+from typing import TYPE_CHECKING
+
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
 from app.logger import app_logger
+
+if TYPE_CHECKING:
+    from pymilvus import MilvusClient
+
+    from app.services.chat_models import ChatModelService
 
 
 class RerankScore(BaseModel):
@@ -63,7 +70,8 @@ class RerankerService:
         if self.provider == "slm":
             if not self._hf_api_key:
                 app_logger.debug(
-                    f"Loading {self.model_name} without HF_API_KEY; private models will fail"
+                    f"Loading {self.model_name} without HF_API_KEY; "
+                    "private models will fail"
                 )
             from sentence_transformers import CrossEncoder
 
@@ -114,8 +122,10 @@ class RerankerService:
                         SystemMessage(
                             content=(
                                 "You are a relevance scoring assistant. "
-                                "Given a query and a document, evaluate how relevant the document is to the query. "
-                                "Provide a score from 0.0 to 10.0 where 10.0 is highly relevant."
+                                "Given a query and a document, evaluate how "
+                                "relevant the document is to the query. "
+                                "Provide a score from 0.0 to 10.0 where "
+                                "10.0 is highly relevant."
                             )
                         ),
                         HumanMessage(

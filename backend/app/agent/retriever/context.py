@@ -5,8 +5,8 @@ from pymilvus import MilvusClient
 
 from app.core.config import Settings
 from app.rag.embeddings import EmbeddingService
-from app.services.reranking import RerankerService
 from app.services.llm.tokenizer import TokenizerService
+from app.services.reranking import RerankerService
 
 
 class AgentContext(BaseModel):

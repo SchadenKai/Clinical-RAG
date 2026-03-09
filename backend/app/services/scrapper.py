@@ -1,4 +1,3 @@
-from pathlib import Path
 
 from crawl4ai import (
     AsyncWebCrawler,

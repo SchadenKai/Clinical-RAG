@@ -6,7 +6,9 @@ from docling.chunking import HierarchicalChunker, HybridChunker
 
 from app.routes.dependencies.file_store import get_s3_service
 from app.routes.dependencies.settings import get_app_settings
-from app.services.scrapper import document_extractor
+from app.routes.dependencies.tokenizer import get_tokenizer_service
+from app.services.document_converter import doc_converter
+from app.services.file_store.context_manager import S3FileStager
 
 _FILE_NAME = "Galaxy - Wikipedia.pdf"
 MD_FILE_DEST = "test_md_1.md"
