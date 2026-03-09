@@ -188,7 +188,7 @@ class VectorClient:
             reqs=[dense_req, sparse_req],
             ranker=RRFRanker(),
             limit=3,
-            output_fields=["text", "metadata", "source"],
+            output_fields=["text", "category", "source"],
         )
         for res in results:
             print(res[0].entity.get("text"))
