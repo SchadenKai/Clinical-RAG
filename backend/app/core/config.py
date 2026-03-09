@@ -46,6 +46,7 @@ class Settings(BaseSettings):
         "RERANKER_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2"
     )
     reranker_api_key: str = os.environ.get("RERANKER_API_KEY", "")
+    reranker_top_k: int = int(os.environ.get("RERANKER_TOP_K", "3"))
 
     # model config
     embedding_provider: str = os.environ.get("EMBEDDING_PROVIDER", "openai")
