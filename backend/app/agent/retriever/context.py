@@ -1,5 +1,3 @@
-from typing import Optional
-
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_text_splitters import TextSplitter
 from pydantic import BaseModel, ConfigDict
@@ -17,7 +15,7 @@ class AgentContext(BaseModel):
     tokenizer: TokenizerService
     db_client: MilvusClient
     chat_model: BaseChatModel
-    reranker: Optional[RerankerService] = None
+    reranker: RerankerService
     include_generation: bool = False
     settings: Settings
 

@@ -139,15 +139,14 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
 
 
 def rerank_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
-    if runtime.context.reranker is None:
-        raise ValueError("Missing reranker service in context")
-
     if not state.documents:
         return state
 
     start_time = time.time()
     reranked_docs = runtime.context.reranker.rerank(
-        query=state.input_query, documents=state.documents, top_k=3
+        query=state.input_query,
+        documents=state.documents,
+        top_k=runtime.context.settings.reranker_top_k,
     )
     rerank_duration_ms = (time.time() - start_time) * 1000
 
