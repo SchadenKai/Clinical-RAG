@@ -1,4 +1,3 @@
-import asyncio
 import hashlib
 import io
 import re
@@ -6,6 +5,7 @@ from urllib.parse import urlparse
 
 from langgraph.runtime import Runtime
 
+from app.logger import app_logger
 from app.services.scrapper import (
     cdc_pdf_url_list_oai,
     cdc_pdf_url_list_playwright,
@@ -23,16 +23,16 @@ _CDC_PLAYWRIGHT_URL = "https://stacks.cdc.gov/guidelines"
 _WHO_HOST = "https://www.who.int"
 
 
-def who_url_collector_node(state: AgentState) -> dict:
+async def who_url_collector_node(state: AgentState) -> dict:
     """
     Collects WHO clinical guideline PDF URLs via Playwright.
     Reuses the existing who_pdf_url_list() function from scrapper.py.
     Handles relative WHO URLs by prepending the base host.
     """
     who_url = state.who_url or _WHO_BASE_URL
-    print(f"[INFO] Collecting WHO PDF URLs from: {who_url}")
+    app_logger.info("Collecting WHO PDF URLs from: %s", who_url)
 
-    raw_urls: set = asyncio.run(who_pdf_url_list(who_url))
+    raw_urls: set = await who_pdf_url_list(who_url)
 
     records = []
     for url in raw_urls:
@@ -43,14 +43,14 @@ def who_url_collector_node(state: AgentState) -> dict:
             url = _WHO_HOST + url
         records.append(PdfRecord(pdf_url=url, source="who"))
 
-    print(f"[INFO] Collected {len(records)} WHO PDF records")
+    app_logger.info("Collected %d WHO PDF records", len(records))
     return {
         "who_pdf_records": records,
         "progress_status": ScraperProgressEnum.COLLECTING_WHO_URLS,
     }
 
 
-def cdc_url_collector_node(state: AgentState) -> dict:
+async def cdc_url_collector_node(state: AgentState) -> dict:
     """
     Collects CDC STACKS clinical guideline PDF URLs via OAI-PMH API.
     Falls back to Playwright scraper if OAI-PMH returns no results.
@@ -60,13 +60,13 @@ def cdc_url_collector_node(state: AgentState) -> dict:
         return {"cdc_pdf_records": []}
 
     cdc_url = state.cdc_url or _CDC_OAI_URL
-    print(f"[INFO] Collecting CDC PDF URLs via OAI-PMH from: {cdc_url}")
+    app_logger.info("Collecting CDC PDF URLs via OAI-PMH from: %s", cdc_url)
 
-    raw_records = asyncio.run(cdc_pdf_url_list_oai(base_url=cdc_url))
+    raw_records = await cdc_pdf_url_list_oai(base_url=cdc_url)
 
     if not raw_records:
-        print("[WARNING] OAI-PMH returned no records, falling back to Playwright")
-        raw_records = asyncio.run(cdc_pdf_url_list_playwright(_CDC_PLAYWRIGHT_URL))
+        app_logger.warning("OAI-PMH returned no records, falling back to Playwright")
+        raw_records = await cdc_pdf_url_list_playwright(_CDC_PLAYWRIGHT_URL)
 
     records = [
         PdfRecord(
@@ -80,7 +80,7 @@ def cdc_url_collector_node(state: AgentState) -> dict:
         if r.get("pdf_url")
     ]
 
-    print(f"[INFO] Collected {len(records)} CDC PDF records")
+    app_logger.info("Collected %d CDC PDF records", len(records))
     return {
         "cdc_pdf_records": records,
         "progress_status": ScraperProgressEnum.COLLECTING_CDC_URLS,
@@ -106,20 +106,21 @@ def merge_records_node(state: AgentState) -> dict:
             seen_urls.add(record.pdf_url)
             all_records.append(record)
 
-    print(f"[INFO] Merged {len(all_records)} unique PDF records")
+    app_logger.info("Merged %d unique PDF records", len(all_records))
     return {
         "all_pdf_records": all_records,
         "progress_status": ScraperProgressEnum.MERGING_RECORDS,
     }
 
 
-def download_and_upload_node(state: AgentState, runtime: Runtime[AgentContext]) -> dict:
+async def download_and_upload_node(state: AgentState, runtime: Runtime[AgentContext]) -> dict:
     """
     Downloads each PDF and uploads it to MinIO S3.
 
     MinIO key format: raw-pdfs/{source}/{sanitized_filename}.pdf
     Uses list_objects_v2 pagination to pre-fetch existing keys for deduplication.
     Uses io.BytesIO + upload_fileobj for in-memory uploads.
+    On filename collision within a run, appends a short sha256 hash suffix.
     """
     s3_client = runtime.context.s3_service.client
     bucket = runtime.context.settings.minio_bucket_name
@@ -131,33 +132,43 @@ def download_and_upload_node(state: AgentState, runtime: Runtime[AgentContext]) 
         for page in paginator.paginate(Bucket=bucket, Prefix="raw-pdfs/"):
             for obj in page.get("Contents", []):
                 existing_keys.add(obj["Key"])
-        print(f"[INFO] Found {len(existing_keys)} existing objects in MinIO")
+        app_logger.info("Found %d existing objects in MinIO", len(existing_keys))
     except Exception as e:
-        print(f"[WARNING] Could not list existing objects in MinIO: {e}")
+        app_logger.warning("Could not list existing objects in MinIO: %s", e)
 
     uploaded_keys: list[str] = []
     failed_urls: list[str] = []
     skipped_urls: list[str] = []
+    uploaded_this_run: set[str] = set()
 
     all_records = state.all_pdf_records or []
-    print(f"[INFO] Processing {len(all_records)} PDF records")
+    app_logger.info("Processing %d PDF records", len(all_records))
 
     for record in all_records:
         filename = _derive_filename(record)
         minio_key = f"raw-pdfs/{record.source}/{filename}"
 
-        # Dedup: skip if already uploaded
+        # Dedup: skip if already uploaded in a previous run
         if minio_key in existing_keys:
-            print(f"[SKIP] Already exists in MinIO: {minio_key}")
+            app_logger.info("Skipping already-existing MinIO key: %s", minio_key)
             skipped_urls.append(record.pdf_url)
             continue
 
         # Download PDF
-        pdf_bytes = asyncio.run(download_pdf_to_bytes(record.pdf_url))
+        pdf_bytes = await download_pdf_to_bytes(record.pdf_url)
         if pdf_bytes is None:
-            print(f"[FAIL] Could not download: {record.pdf_url}")
+            app_logger.warning("Could not download PDF: %s", record.pdf_url)
             failed_urls.append(record.pdf_url)
             continue
+
+        # Collision: same derived key already uploaded THIS run → suffix with content hash
+        if minio_key in uploaded_this_run:
+            content_hash = hashlib.sha256(pdf_bytes).hexdigest()[:8]
+            if minio_key.endswith(".pdf"):
+                minio_key = minio_key[:-4] + f"_{content_hash}.pdf"
+            else:
+                minio_key = minio_key + f"_{content_hash}"
+            app_logger.info("Key collision detected — using hash-suffixed key: %s", minio_key)
 
         # Upload to MinIO
         try:
@@ -169,14 +180,15 @@ def download_and_upload_node(state: AgentState, runtime: Runtime[AgentContext]) 
                 ExtraArgs={"ContentType": "application/pdf"},
             )
             uploaded_keys.append(minio_key)
-            print(f"[OK] Uploaded: {minio_key}")
+            uploaded_this_run.add(minio_key)
+            app_logger.info("Uploaded: %s", minio_key)
         except Exception as e:
-            print(f"[FAIL] Upload error for {minio_key}: {e}")
+            app_logger.error("Upload error for %s: %s", minio_key, e)
             failed_urls.append(record.pdf_url)
 
-    print(
-        f"[INFO] Done. Uploaded: {len(uploaded_keys)}, "
-        f"Failed: {len(failed_urls)}, Skipped: {len(skipped_urls)}"
+    app_logger.info(
+        "Done. Uploaded: %d, Failed: %d, Skipped: %d",
+        len(uploaded_keys), len(failed_urls), len(skipped_urls),
     )
     return {
         "uploaded_keys": uploaded_keys,

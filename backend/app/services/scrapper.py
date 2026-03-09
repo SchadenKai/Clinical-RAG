@@ -1,3 +1,7 @@
+import asyncio
+import xml.etree.ElementTree as ET
+
+import httpx
 from crawl4ai import (
     AsyncWebCrawler,
     BrowserConfig,
@@ -7,6 +11,8 @@ from crawl4ai import (
     JsonCssExtractionStrategy,
 )
 from playwright.async_api import async_playwright
+
+from app.logger import app_logger
 
 
 async def simple_crawler(url: str) -> CrawlResult:
@@ -51,31 +57,31 @@ async def who_pdf_url_list(website_url: str) -> set:
         await page.goto(website_url)
 
         while True:
-            print("[DEBUG] Gathering button hrefs")
+            app_logger.debug("Gathering button hrefs")
             buttons_href: list[str | None] | None = await page.get_by_label(
                 "Download"
             ).evaluate_all("el => el.map(e => e.getAttribute('href')).filter(h => h)")
 
             if buttons_href is None or buttons_href == []:
                 next_page_btn = page.get_by_label("Go to the next page").first
-                print("[DEBUG] Navigating to the next page")
+                app_logger.debug("Navigating to the next page")
                 if (
                     not await next_page_btn.is_visible()
                     and await next_page_btn.is_disabled()
                 ):
-                    print("[DEBUG] Exiting")
+                    app_logger.debug("Exiting")
                     break
                 await next_page_btn.click()
 
             pdf_download_url.update(buttons_href)
 
             next_page_btn = page.get_by_label("Go to the next page").first
-            print("[DEBUG] Navigating to the next page")
+            app_logger.debug("Navigating to the next page")
             if (
                 not await next_page_btn.is_visible()
                 and await next_page_btn.is_disabled()
             ):
-                print("[DEBUG] Exiting")
+                app_logger.debug("Exiting")
                 break
             await next_page_btn.click()
             await page.wait_for_load_state("domcontentloaded")
@@ -250,11 +256,6 @@ async def cdc_pdf_url_list_oai(
     Returns a list of dicts with keys:
         pdf_url, title, date, identifier, cdc_id
     """
-    import asyncio
-    import xml.etree.ElementTree as ET
-
-    import httpx
-
     OAI_NS = "http://www.openarchives.org/OAI/2.0/"
     DC_NS = "http://purl.org/dc/elements/1.1/"
 
@@ -270,11 +271,13 @@ async def cdc_pdf_url_list_oai(
                 resp = await client.get(base_url, params=params)
                 resp.raise_for_status()
                 root = ET.fromstring(resp.text)
+            except httpx.HTTPError:
+                raise
             except ET.ParseError as exc:
-                print(
-                    f"[ERROR] Malformed XML from OAI-PMH endpoint: {exc} | "
-                    f"status={resp.status_code} | base_url={base_url} | "
-                    f"params={params} | body_preview={resp.text[:200]!r}"
+                app_logger.error(
+                    "Malformed XML from OAI-PMH endpoint: %s | status=%s | base_url=%s | "
+                    "params=%s | body_preview=%.200r",
+                    exc, resp.status_code, base_url, params, resp.text,
                 )
                 break
 
@@ -319,7 +322,8 @@ async def cdc_pdf_url_list_oai(
                         }
                     )
 
-            if max_records and len(records) >= max_records:
+            if max_records is not None and max_records > 0 and len(records) >= max_records:
+                records = records[:max_records]
                 break
 
             token_el = root.find(f".//{{{OAI_NS}}}resumptionToken")
@@ -381,8 +385,6 @@ async def download_pdf_to_bytes(url: str, timeout: float = 60.0) -> bytes | None
     Downloads a PDF from the given URL and returns its content as bytes.
     Returns None on failure (HTTP error, timeout, non-PDF content).
     """
-    import httpx
-
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (compatible; CDC-WHO-RAG-Bot/1.0; "
@@ -397,9 +399,9 @@ async def download_pdf_to_bytes(url: str, timeout: float = 60.0) -> bytes | None
             resp.raise_for_status()
             content_type = resp.headers.get("content-type", "")
             if "pdf" not in content_type and not url.lower().endswith(".pdf"):
-                print(f"[WARNING] Unexpected content-type '{content_type}' for {url}")
+                app_logger.warning("Unexpected content-type %r for %s", content_type, url)
                 return None
             return resp.content
     except Exception as e:
-        print(f"[ERROR] Failed to download PDF from {url}: {e}")
+        app_logger.error("Failed to download PDF from %s: %s", url, e)
         return None

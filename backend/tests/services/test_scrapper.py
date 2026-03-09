@@ -11,6 +11,7 @@ network access or a running browser.
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 
 
@@ -260,7 +261,6 @@ class TestCdcPdfUrlListOai:
         assert "metadataPrefix" not in params
 
     def test_raises_on_http_error(self):
-        import httpx
         from app.services.scrapper import cdc_pdf_url_list_oai
 
         mock_client = AsyncMock()

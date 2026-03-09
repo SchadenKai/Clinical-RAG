@@ -7,12 +7,11 @@ Tests for the guideline_scraper LangGraph agent:
 All external I/O (scrapper functions, S3/MinIO) is mocked.
 """
 
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from langgraph.types import Command
-from pytest_mock import MockerFixture, MockType
+from pytest_mock import MockerFixture
 
 from app.agent.guideline_scraper.context import AgentContext
 from app.agent.guideline_scraper.edges import is_any_records_found, route_entry
@@ -71,13 +70,13 @@ def _make_runtime(mocker: MockerFixture, existing_keys: list[str] | None = None)
 
 
 class TestWhoUrlCollectorNode:
-    def test_wraps_absolute_urls_as_pdf_records(self, mocker: MockerFixture):
+    async def test_wraps_absolute_urls_as_pdf_records(self, mocker: MockerFixture):
         with patch(
             "app.agent.guideline_scraper.nodes.who_pdf_url_list",
             new_callable=AsyncMock,
             return_value={"https://www.who.int/pub/guide.pdf"},
         ):
-            result = who_url_collector_node(AgentState())
+            result = await who_url_collector_node(AgentState())
 
         assert len(result["who_pdf_records"]) == 1
         record = result["who_pdf_records"][0]
@@ -85,30 +84,30 @@ class TestWhoUrlCollectorNode:
         assert record.pdf_url == "https://www.who.int/pub/guide.pdf"
         assert result["progress_status"] == ScraperProgressEnum.COLLECTING_WHO_URLS
 
-    def test_prepends_host_for_relative_urls(self, mocker: MockerFixture):
+    async def test_prepends_host_for_relative_urls(self, mocker: MockerFixture):
         with patch(
             "app.agent.guideline_scraper.nodes.who_pdf_url_list",
             new_callable=AsyncMock,
             return_value={"/publications/i/item/guide.pdf"},
         ):
-            result = who_url_collector_node(AgentState())
+            result = await who_url_collector_node(AgentState())
 
         assert (
             result["who_pdf_records"][0].pdf_url
             == "https://www.who.int/publications/i/item/guide.pdf"
         )
 
-    def test_filters_none_and_empty_urls(self, mocker: MockerFixture):
+    async def test_filters_none_and_empty_urls(self, mocker: MockerFixture):
         with patch(
             "app.agent.guideline_scraper.nodes.who_pdf_url_list",
             new_callable=AsyncMock,
             return_value={None, "", "https://www.who.int/pub/valid.pdf"},
         ):
-            result = who_url_collector_node(AgentState())
+            result = await who_url_collector_node(AgentState())
 
         assert len(result["who_pdf_records"]) == 1
 
-    def test_uses_custom_who_url_from_state(self, mocker: MockerFixture):
+    async def test_uses_custom_who_url_from_state(self, mocker: MockerFixture):
         custom_url = "https://www.who.int/custom-publications"
         captured = {}
 
@@ -119,7 +118,7 @@ class TestWhoUrlCollectorNode:
         with patch(
             "app.agent.guideline_scraper.nodes.who_pdf_url_list", fake_who_pdf_url_list
         ):
-            who_url_collector_node(AgentState(who_url=custom_url))
+            await who_url_collector_node(AgentState(who_url=custom_url))
 
         assert captured["url"] == custom_url
 
@@ -130,7 +129,7 @@ class TestWhoUrlCollectorNode:
 
 
 class TestCdcUrlCollectorNode:
-    def test_short_circuits_when_scrape_cdc_false(self, mocker: MockerFixture):
+    async def test_short_circuits_when_scrape_cdc_false(self, mocker: MockerFixture):
         mock_oai = mocker.patch(
             "app.agent.guideline_scraper.nodes.cdc_pdf_url_list_oai"
         )
@@ -138,13 +137,13 @@ class TestCdcUrlCollectorNode:
             "app.agent.guideline_scraper.nodes.cdc_pdf_url_list_playwright"
         )
 
-        result = cdc_url_collector_node(AgentState(scrape_cdc=False))
+        result = await cdc_url_collector_node(AgentState(scrape_cdc=False))
 
         assert result["cdc_pdf_records"] == []
         mock_oai.assert_not_called()
         mock_pw.assert_not_called()
 
-    def test_uses_oai_results_when_available(self, mocker: MockerFixture):
+    async def test_uses_oai_results_when_available(self, mocker: MockerFixture):
         oai_data = [
             {
                 "pdf_url": "https://stacks.cdc.gov/view/cdc/1/cdc_1_DS1.pdf",
@@ -162,14 +161,14 @@ class TestCdcUrlCollectorNode:
             new_callable=AsyncMock,
             return_value=oai_data,
         ):
-            result = cdc_url_collector_node(AgentState(scrape_cdc=True))
+            result = await cdc_url_collector_node(AgentState(scrape_cdc=True))
 
         assert len(result["cdc_pdf_records"]) == 1
         assert result["cdc_pdf_records"][0].source == "cdc"
         assert result["cdc_pdf_records"][0].title == "T"
         mock_pw.assert_not_called()
 
-    def test_falls_back_to_playwright_when_oai_empty(self, mocker: MockerFixture):
+    async def test_falls_back_to_playwright_when_oai_empty(self, mocker: MockerFixture):
         pw_data = [
             {
                 "pdf_url": "https://stacks.cdc.gov/guidelines/doc.pdf",
@@ -188,11 +187,11 @@ class TestCdcUrlCollectorNode:
                 new_callable=AsyncMock,
                 return_value=pw_data,
             ):
-                result = cdc_url_collector_node(AgentState(scrape_cdc=True))
+                result = await cdc_url_collector_node(AgentState(scrape_cdc=True))
 
         assert len(result["cdc_pdf_records"]) == 1
 
-    def test_filters_records_missing_pdf_url(self, mocker: MockerFixture):
+    async def test_filters_records_missing_pdf_url(self, mocker: MockerFixture):
         oai_data = [
             {"pdf_url": "https://stacks.cdc.gov/view/cdc/1/cdc_1_DS1.pdf"},
             {"title": "No URL record"},  # missing pdf_url
@@ -203,11 +202,11 @@ class TestCdcUrlCollectorNode:
             new_callable=AsyncMock,
             return_value=oai_data,
         ):
-            result = cdc_url_collector_node(AgentState(scrape_cdc=True))
+            result = await cdc_url_collector_node(AgentState(scrape_cdc=True))
 
         assert len(result["cdc_pdf_records"]) == 1
 
-    def test_returns_collecting_cdc_urls_status(self, mocker: MockerFixture):
+    async def test_returns_collecting_cdc_urls_status(self, mocker: MockerFixture):
         with patch(
             "app.agent.guideline_scraper.nodes.cdc_pdf_url_list_oai",
             new_callable=AsyncMock,
@@ -215,7 +214,7 @@ class TestCdcUrlCollectorNode:
                 {"pdf_url": "https://stacks.cdc.gov/view/cdc/1/cdc_1_DS1.pdf"}
             ],
         ):
-            result = cdc_url_collector_node(AgentState(scrape_cdc=True))
+            result = await cdc_url_collector_node(AgentState(scrape_cdc=True))
 
         assert result["progress_status"] == ScraperProgressEnum.COLLECTING_CDC_URLS
 
@@ -302,7 +301,7 @@ class TestMergeRecordsNode:
 
 
 class TestDownloadAndUploadNode:
-    def test_uploads_pdf_to_minio(self, mocker: MockerFixture):
+    async def test_uploads_pdf_to_minio(self, mocker: MockerFixture):
         runtime, s3_client = _make_runtime(mocker, existing_keys=[])
         state = AgentState(
             all_pdf_records=[_make_pdf_record("https://who.int/pub/guide.pdf", "who")]
@@ -313,14 +312,14 @@ class TestDownloadAndUploadNode:
             new_callable=AsyncMock,
             return_value=b"%PDF test",
         ):
-            result = download_and_upload_node(state, runtime)
+            result = await download_and_upload_node(state, runtime)
 
         assert result["uploaded_keys"] == ["raw-pdfs/who/guide.pdf"]
         assert result["failed_urls"] == []
         assert result["skipped_urls"] == []
         s3_client.upload_fileobj.assert_called_once()
 
-    def test_upload_uses_correct_content_type(self, mocker: MockerFixture):
+    async def test_upload_uses_correct_content_type(self, mocker: MockerFixture):
         runtime, s3_client = _make_runtime(mocker)
         state = AgentState(
             all_pdf_records=[_make_pdf_record("https://who.int/pub/guide.pdf", "who")]
@@ -331,12 +330,12 @@ class TestDownloadAndUploadNode:
             new_callable=AsyncMock,
             return_value=b"%PDF test",
         ):
-            download_and_upload_node(state, runtime)
+            await download_and_upload_node(state, runtime)
 
         call_kwargs = s3_client.upload_fileobj.call_args[1]
         assert call_kwargs.get("ExtraArgs") == {"ContentType": "application/pdf"}
 
-    def test_skips_existing_minio_key(self, mocker: MockerFixture):
+    async def test_skips_existing_minio_key(self, mocker: MockerFixture):
         runtime, s3_client = _make_runtime(
             mocker, existing_keys=["raw-pdfs/who/guide.pdf"]
         )
@@ -348,14 +347,14 @@ class TestDownloadAndUploadNode:
             "app.agent.guideline_scraper.nodes.download_pdf_to_bytes",
             new_callable=AsyncMock,
         ) as mock_dl:
-            result = download_and_upload_node(state, runtime)
+            result = await download_and_upload_node(state, runtime)
 
         assert result["skipped_urls"] == ["https://who.int/pub/guide.pdf"]
         assert result["uploaded_keys"] == []
         mock_dl.assert_not_called()
         s3_client.upload_fileobj.assert_not_called()
 
-    def test_records_failed_url_on_download_failure(self, mocker: MockerFixture):
+    async def test_records_failed_url_on_download_failure(self, mocker: MockerFixture):
         runtime, s3_client = _make_runtime(mocker)
         state = AgentState(
             all_pdf_records=[_make_pdf_record("https://who.int/pub/guide.pdf", "who")]
@@ -366,13 +365,13 @@ class TestDownloadAndUploadNode:
             new_callable=AsyncMock,
             return_value=None,  # download failed
         ):
-            result = download_and_upload_node(state, runtime)
+            result = await download_and_upload_node(state, runtime)
 
         assert result["failed_urls"] == ["https://who.int/pub/guide.pdf"]
         assert result["uploaded_keys"] == []
         s3_client.upload_fileobj.assert_not_called()
 
-    def test_records_failed_url_on_upload_error(self, mocker: MockerFixture):
+    async def test_records_failed_url_on_upload_error(self, mocker: MockerFixture):
         runtime, s3_client = _make_runtime(mocker)
         s3_client.upload_fileobj.side_effect = Exception("MinIO unavailable")
         state = AgentState(
@@ -384,12 +383,12 @@ class TestDownloadAndUploadNode:
             new_callable=AsyncMock,
             return_value=b"%PDF test",
         ):
-            result = download_and_upload_node(state, runtime)
+            result = await download_and_upload_node(state, runtime)
 
         assert result["failed_urls"] == ["https://who.int/pub/guide.pdf"]
         assert result["uploaded_keys"] == []
 
-    def test_run_metadata_counts_are_accurate(self, mocker: MockerFixture):
+    async def test_run_metadata_counts_are_accurate(self, mocker: MockerFixture):
         # 3 records: 1 success, 1 skip (pre-existing), 1 fail (download returns None)
         runtime, s3_client = _make_runtime(
             mocker, existing_keys=["raw-pdfs/cdc/skip.pdf"]
@@ -414,7 +413,7 @@ class TestDownloadAndUploadNode:
             new_callable=AsyncMock,
             side_effect=fake_download,
         ):
-            result = download_and_upload_node(state, runtime)
+            result = await download_and_upload_node(state, runtime)
 
         meta = result["run_metadata"]
         assert meta["total_records"] == 3
@@ -422,22 +421,22 @@ class TestDownloadAndUploadNode:
         assert meta["skipped"] == 1
         assert meta["failed"] == 1
 
-    def test_handles_empty_all_pdf_records(self, mocker: MockerFixture):
+    async def test_handles_empty_all_pdf_records(self, mocker: MockerFixture):
         runtime, s3_client = _make_runtime(mocker)
         state = AgentState(all_pdf_records=[])
 
-        result = download_and_upload_node(state, runtime)
+        result = await download_and_upload_node(state, runtime)
 
         assert result["uploaded_keys"] == []
         assert result["failed_urls"] == []
         assert result["skipped_urls"] == []
         s3_client.upload_fileobj.assert_not_called()
 
-    def test_status_is_done(self, mocker: MockerFixture):
+    async def test_status_is_done(self, mocker: MockerFixture):
         runtime, _ = _make_runtime(mocker)
         state = AgentState(all_pdf_records=[])
 
-        result = download_and_upload_node(state, runtime)
+        result = await download_and_upload_node(state, runtime)
 
         assert result["progress_status"] == ScraperProgressEnum.DONE
 
@@ -543,6 +542,7 @@ class TestGuidelineScraperEdges:
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.integration
 class TestGuidelineScraperAgentIntegration:
     @pytest.fixture
     def agent_context(self, mocker: MockerFixture) -> AgentContext:
