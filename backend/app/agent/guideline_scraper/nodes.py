@@ -163,7 +163,8 @@ async def download_and_upload_node(
             failed_urls.append(record.pdf_url)
             continue
 
-        # Collision: same derived key already uploaded THIS run → suffix with content hash
+        # Collision: same derived key already uploaded THIS run
+        # → suffix with content hash
         if minio_key in uploaded_this_run:
             content_hash = hashlib.sha256(pdf_bytes).hexdigest()[:8]
             if minio_key.endswith(".pdf"):

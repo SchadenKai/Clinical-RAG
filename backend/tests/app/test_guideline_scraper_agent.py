@@ -26,7 +26,6 @@ from app.agent.guideline_scraper.state import AgentState
 from app.core.config import Settings
 from app.services.file_store.db import S3Service
 
-
 # ---------------------------------------------------------------------------
 # Shared fixtures / helpers
 # ---------------------------------------------------------------------------
@@ -559,7 +558,7 @@ class TestGuidelineScraperAgentIntegration:
 
         return AgentContext(s3_service=mock_s3_service, settings=mock_settings)
 
-    def test_agent_full_run_who_and_cdc(self, agent_context: AgentContext):
+    async def test_agent_full_run_who_and_cdc(self, agent_context: AgentContext):
         from app.agent.guideline_scraper.main import agent
 
         who_data = {"https://www.who.int/pub/guide.pdf"}
@@ -589,7 +588,7 @@ class TestGuidelineScraperAgentIntegration:
         ):
             final_state = {}
             config = {"configurable": {"thread_id": "test-full-run"}}
-            for chunk in agent.stream(
+            async for chunk in agent.astream(
                 input=AgentState(scrape_who=True, scrape_cdc=True),
                 context=agent_context,
                 config=config,
@@ -599,7 +598,7 @@ class TestGuidelineScraperAgentIntegration:
 
         assert "uploaded_keys" in final_state or "run_metadata" in final_state
 
-    def test_agent_only_cdc(self, agent_context: AgentContext):
+    async def test_agent_only_cdc(self, agent_context: AgentContext):
         from app.agent.guideline_scraper.main import agent
 
         cdc_data = [{"pdf_url": "https://stacks.cdc.gov/view/cdc/1/cdc_1_DS1.pdf"}]
@@ -618,7 +617,7 @@ class TestGuidelineScraperAgentIntegration:
         ):
             node_names_visited = []
             config = {"configurable": {"thread_id": "test-cdc-only"}}
-            for chunk in agent.stream(
+            async for chunk in agent.astream(
                 input=AgentState(scrape_who=False, scrape_cdc=True),
                 context=agent_context,
                 config=config,
@@ -628,7 +627,7 @@ class TestGuidelineScraperAgentIntegration:
         assert "who_url_collector_node" not in node_names_visited
         assert "cdc_url_collector_node" in node_names_visited
 
-    def test_agent_aborts_when_no_records(self, agent_context: AgentContext):
+    async def test_agent_aborts_when_no_records(self, agent_context: AgentContext):
         from app.agent.guideline_scraper.main import agent
 
         with (
@@ -651,7 +650,7 @@ class TestGuidelineScraperAgentIntegration:
             node_names_visited = []
             final_state = {}
             config = {"configurable": {"thread_id": "test-no-records"}}
-            for chunk in agent.stream(
+            async for chunk in agent.astream(
                 input=AgentState(scrape_who=True, scrape_cdc=True),
                 context=agent_context,
                 config=config,

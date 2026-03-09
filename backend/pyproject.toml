@@ -94,7 +94,7 @@ ignore = []
 [tool.pytest.ini_options]
 pythonpath = "."
 minversion = "6.0"
-addopts = "-ra -v --cov=app"
+addopts = "-ra -v"
 asyncio_mode = "auto"
 testpaths = [
     "tests",

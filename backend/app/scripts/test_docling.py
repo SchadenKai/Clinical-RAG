@@ -9,7 +9,6 @@ from app.routes.dependencies.settings import get_app_settings
 from app.routes.dependencies.tokenizer import get_tokenizer_service
 from app.services.document_converter import doc_converter
 from app.services.file_store.context_manager import S3FileStager
-from app.services.scrapper import document_extractor
 
 _FILE_NAME = "Galaxy - Wikipedia.pdf"
 MD_FILE_DEST = "test_md_1.md"

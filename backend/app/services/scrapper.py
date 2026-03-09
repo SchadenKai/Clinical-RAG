@@ -275,8 +275,8 @@ async def cdc_pdf_url_list_oai(
                 raise
             except ET.ParseError as exc:
                 app_logger.error(
-                    "Malformed XML from OAI-PMH endpoint: %s | status=%s | base_url=%s | "
-                    "params=%s | body_preview=%.200r",
+                    "Malformed XML from OAI-PMH endpoint: %s"
+                    " | status=%s | base_url=%s | params=%s | body_preview=%.200r",
                     exc,
                     resp.status_code,
                     base_url,
@@ -297,7 +297,8 @@ async def cdc_pdf_url_list_oai(
                 )
                 identifier = identifier_el.text if identifier_el is not None else ""
 
-                # Extract numeric CDC ID from identifier like "oai:stacks.cdc.gov:cdc/12345"
+                # Extract numeric CDC ID from identifier
+                # like "oai:stacks.cdc.gov:cdc/12345"
                 cdc_id = None
                 if identifier:
                     parts = identifier.split("/")
