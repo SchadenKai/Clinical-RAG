@@ -43,7 +43,7 @@ class SyntheticDataGenerator:
         if self._embedder:
             return self._embedder
         self._embedder = LocalEmbeddingModel(
-            model=self.settings.bi_encoder_model,
+            model=self.settings.embedding_model,
             api_key=self.settings.embedding_api_key,
             base_url="https://api.studio.nebius.ai/v1/",
         )
