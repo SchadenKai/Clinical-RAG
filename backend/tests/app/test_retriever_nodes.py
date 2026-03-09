@@ -119,9 +119,7 @@ class TestSearchNode:
         assert isinstance(dense_req.data[0], list)
 
     def test_search_threshold_filters_low_score_results(self, mocker):
-        runtime, mk_db_client = _make_runtime(
-            mocker, search_score_threshold=0.02
-        )
+        runtime, mk_db_client = _make_runtime(mocker, search_score_threshold=0.02)
 
         hit_above = _make_hit("good doc", "https://cdc.gov/1", "fever", 0.05, 1)
         hit_below = _make_hit("bad doc", "https://who.int/2", "other", 0.005, 2)
