@@ -27,6 +27,7 @@ def sample_documents():
 # Provider: SLM
 # ---------------------------------------------------------------------------
 
+
 @patch("sentence_transformers.CrossEncoder")
 def test_reranker_service_slm(mock_cross_encoder, sample_documents):
     mock_model_instance = MagicMock()
@@ -49,6 +50,7 @@ def test_reranker_service_slm(mock_cross_encoder, sample_documents):
 # ---------------------------------------------------------------------------
 # Provider: LLM
 # ---------------------------------------------------------------------------
+
 
 def test_reranker_service_llm(sample_documents):
     mock_client = MagicMock()
@@ -125,6 +127,7 @@ def test_model_property_llm_raises():
 # Validation / _validate_provider
 # ---------------------------------------------------------------------------
 
+
 def test_validate_provider_invalid():
     """Unknown provider string should raise ValueError at init."""
     with pytest.raises(ValueError, match="Unknown reranker provider"):
@@ -146,6 +149,7 @@ def test_validate_provider_milvus_not_implemented():
 # ---------------------------------------------------------------------------
 # Edge cases: rerank()
 # ---------------------------------------------------------------------------
+
 
 def test_rerank_empty_documents():
     """rerank() with an empty document list should return an empty list."""
@@ -177,6 +181,7 @@ def test_rerank_top_k_exceeds_document_count(mock_cross_encoder, sample_document
 # ---------------------------------------------------------------------------
 # rerank_node (LangGraph node)
 # ---------------------------------------------------------------------------
+
 
 @patch("sentence_transformers.CrossEncoder")
 def test_rerank_node(mock_cross_encoder, sample_documents):
