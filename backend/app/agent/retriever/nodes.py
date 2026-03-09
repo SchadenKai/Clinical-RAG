@@ -7,10 +7,12 @@ from langgraph.runtime import Runtime
 from pymilvus import AnnSearchRequest, RRFRanker
 
 from .context import AgentContext
-from .models import SafetyClassificationEnum, SafetyClassifierSOModel
+from .models import QueryGeneratorSOModel, SafetyClassificationEnum, SafetyClassifierSOModel
 from .prompts import (
     FIX_CITATION_PROMPT,
     HUMAN_MESSAGE_TEMPLATE,
+    QUERY_GENERATOR_HUMAN_MESSAGE_TEMPLATE,
+    QUERY_GENERATOR_SYSTEM_PROMPT,
     REFUSAL_AGENT_HUMAN_PROMPT_TEMPLATE,
     REFUSAL_AGENT_SYSTEM_PROMPT,
     REPORT_GENERATION_SYSTEM_PROMPT,
@@ -48,13 +50,13 @@ def safety_classifier_node(
     return state.model_copy(update={"safety_classification": response})
 
 
-def is_query_safe(state: AgentState) -> Literal["embed_query", "refusal_node"]:
+def is_query_safe(state: AgentState) -> Literal["generate_queries", "refusal_node"]:
     if (
         state.safety_classification.classification == SafetyClassificationEnum.SAFE
         or state.safety_classification.confidence_score
         < _SAFETY_CLASSIFICATION_THRESHOLD
     ):
-        return "embed_query"
+        return "generate_queries"
     return "refusal_node"
 
 
@@ -80,6 +82,27 @@ def refusal_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentStat
     return state.model_copy(update={"final_answer": res.content})
 
 
+def generate_queries(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
+    if state.input_query is None:
+        raise ValueError("Input query cannot be empty")
+    if runtime.context.chat_model is None:
+        raise ValueError("Missing chat model")
+
+    messages: list[BaseMessage] = [
+        SystemMessage(content=QUERY_GENERATOR_SYSTEM_PROMPT),
+        HumanMessage(
+            content=QUERY_GENERATOR_HUMAN_MESSAGE_TEMPLATE.format(
+                user_query=state.input_query
+            )
+        ),
+    ]
+    chat_model = runtime.context.chat_model.with_structured_output(
+        schema=QueryGeneratorSOModel
+    )
+    response: QueryGeneratorSOModel = chat_model.invoke(messages)
+    return state.model_copy(update={"generated_queries": response.queries})
+
+
 def embed_query(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
     if runtime.context.embedding is None:
         raise ValueError("Missing embedding model")
@@ -87,15 +110,30 @@ def embed_query(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState
         raise ValueError("Missing tokenizer model")
     if state.input_query is None:
         raise ValueError("Input query cannot be empty")
-    res = runtime.context.embedding.embed_query(
-        text=state.input_query,
-        tokenizer=runtime.context.tokenizer,
-        event_name="retrieval agent",
-    )
-    embedding = res.embedding
-    res = res.model_dump()
-    res.pop("embedding")
-    return state.model_copy(update={"embedded_query": embedding, "run_metadata": res})
+
+    queries = state.generated_queries or [state.input_query]
+    embeddings = []
+    total_token_count = 0
+    total_cost = 0.0
+    total_duration_ms = 0.0
+
+    for query in queries:
+        res = runtime.context.embedding.embed_query(
+            text=query,
+            tokenizer=runtime.context.tokenizer,
+            event_name="retrieval agent",
+        )
+        embeddings.append(res.embedding)
+        total_token_count += res.token_count
+        total_cost += res.total_cost
+        total_duration_ms += res.duration_ms
+
+    run_meta = {
+        "token_count": total_token_count,
+        "total_cost": total_cost,
+        "duration_ms": total_duration_ms,
+    }
+    return state.model_copy(update={"embedded_query": embeddings, "run_metadata": run_meta})
 
 
 def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
@@ -107,11 +145,10 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
         raise ValueError(
             f"Embedding query cannot be of type {type(state.embedded_query)}"
         )
-    if isinstance(state.embedded_query[0], float):
-        state.embedded_query = [state.embedded_query]
     start_time = time.time()
     runtime.context.db_client.use_database(runtime.context.settings.milvus_db_name)
 
+    text_queries = state.generated_queries or [state.input_query]
     search_limit = runtime.context.settings.search_limit
     dense_req = AnnSearchRequest(
         data=state.embedded_query,
@@ -120,7 +157,7 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
         limit=search_limit,
     )
     sparse_req = AnnSearchRequest(
-        data=[state.input_query],
+        data=text_queries,
         anns_field="sparse_vector",
         param={"metric_type": "BM25"},
         limit=search_limit,

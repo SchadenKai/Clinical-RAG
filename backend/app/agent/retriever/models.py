@@ -1,7 +1,7 @@
 import enum
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class RelevantDocs(BaseModel):
@@ -44,3 +44,21 @@ class SafetyClassifierSOModel(BaseModel):
         ge=0.0,
         le=1.0,
     )
+
+
+class QueryGeneratorSOModel(BaseModel):
+    queries: list[str] = Field(
+        description=(
+            "List of search queries generated from the user's input. "
+            "For simple queries, return a single query. For complex queries, "
+            "return multiple distinct queries covering different aspects. "
+            "Must contain at least 1 query."
+        ),
+    )
+
+    @field_validator("queries")
+    @classmethod
+    def queries_must_not_be_empty(cls, v: list[str]) -> list[str]:
+        if len(v) < 1:
+            raise ValueError("queries must contain at least 1 query")
+        return v
