@@ -5,6 +5,8 @@ from typing import Literal
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.runtime import Runtime
 
+from app.logger import app_logger
+
 from .context import AgentContext
 from .models import SafetyClassificationEnum, SafetyClassifierSOModel
 from .prompts import (
@@ -115,8 +117,7 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
         anns_field="vector",
         data=state.embedded_query,
         output_fields=["text", "category", "source"],
-        limit=10,
-        # TODO: connect this later in agent context
+        limit=runtime.context.settings.reranker_top_k * 3,
         search_params={
             "radius": 0.5,  # Lower score threshold
             "range_filter": 1.0,  # Upper score threshold
@@ -246,11 +247,10 @@ def citation_verification(state: AgentState) -> AgentState:
 def is_citation_correct(
     state: AgentState,
 ) -> Literal["final_report_generation", "__end__"]:
-    print(f"[DEBUG] Checking citation state: {state.is_verified_citations}")
+    app_logger.debug(f"Checking citation state: {state.is_verified_citations}")
     if state.is_verified_citations:
         return "__end__"
-    print(f"[DEBUG] The wrong citations: {state.final_answer}")
-    print(f"[DEBUG] The wrong citations: {state.wrong_citations}")
+    app_logger.debug(f"Wrong citations: {state.wrong_citations}")
     return "final_report_generation"
 
 

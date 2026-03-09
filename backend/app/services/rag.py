@@ -151,7 +151,7 @@ class RetrievalService:
         self.tokenizer_service: TokenizerService = tokenizer_service
         self.chat_model_service: ChatModelService = chat_model_service
         self.settings: Settings = settings
-        self.reranker_service = reranker_service
+        self.reranker_service: RerankerService = reranker_service
 
     def retrieve_documents(
         self,
