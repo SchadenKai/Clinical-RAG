@@ -173,7 +173,9 @@ class TestSearchNode:
         assert new_state.sources == ["https://cdc.gov/1"]
 
 
-def _make_embedding_response(mocker, embedding, token_count=10, total_cost=0.001, duration_ms=50.0):
+def _make_embedding_response(
+    mocker, embedding, token_count=10, total_cost=0.001, duration_ms=50.0
+):
     res = mocker.MagicMock()
     res.embedding = embedding
     res.token_count = token_count
@@ -249,7 +251,9 @@ class TestEmbedQueryNode:
             _make_embedding_response(mocker, vec1),
             _make_embedding_response(mocker, vec2),
         ]
-        runtime, mk_embedding = self._make_runtime(mocker, embedding_side_effect=responses)
+        runtime, mk_embedding = self._make_runtime(
+            mocker, embedding_side_effect=responses
+        )
 
         state = AgentState(
             input_query="malaria prevention",
@@ -281,8 +285,12 @@ class TestEmbedQueryNode:
 
     def test_embed_query_aggregates_metadata(self, mocker):
         responses = [
-            _make_embedding_response(mocker, [0.1], token_count=5, total_cost=0.001, duration_ms=20.0),
-            _make_embedding_response(mocker, [0.2], token_count=7, total_cost=0.002, duration_ms=30.0),
+            _make_embedding_response(
+                mocker, [0.1], token_count=5, total_cost=0.001, duration_ms=20.0
+            ),
+            _make_embedding_response(
+                mocker, [0.2], token_count=7, total_cost=0.002, duration_ms=30.0
+            ),
         ]
         runtime, _ = self._make_runtime(mocker, embedding_side_effect=responses)
 

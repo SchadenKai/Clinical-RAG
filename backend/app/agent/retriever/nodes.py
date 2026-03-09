@@ -7,7 +7,11 @@ from langgraph.runtime import Runtime
 from pymilvus import AnnSearchRequest, RRFRanker
 
 from .context import AgentContext
-from .models import QueryGeneratorSOModel, SafetyClassificationEnum, SafetyClassifierSOModel
+from .models import (
+    QueryGeneratorSOModel,
+    SafetyClassificationEnum,
+    SafetyClassifierSOModel,
+)
 from .prompts import (
     FIX_CITATION_PROMPT,
     HUMAN_MESSAGE_TEMPLATE,
@@ -133,7 +137,9 @@ def embed_query(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState
         "total_cost": total_cost,
         "duration_ms": total_duration_ms,
     }
-    return state.model_copy(update={"embedded_query": embeddings, "run_metadata": run_meta})
+    return state.model_copy(
+        update={"embedded_query": embeddings, "run_metadata": run_meta}
+    )
 
 
 def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
