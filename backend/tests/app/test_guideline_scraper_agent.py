@@ -32,6 +32,7 @@ from app.services.file_store.db import S3Service
 # Shared fixtures / helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_pdf_record(url: str, source: str = "who", **kwargs) -> PdfRecord:
     return PdfRecord(pdf_url=url, source=source, **kwargs)
 
@@ -43,7 +44,9 @@ def _make_runtime(mocker: MockerFixture, existing_keys: list[str] | None = None)
     # Paginator mock for list_objects_v2
     mock_paginator = mocker.MagicMock()
     contents = [{"Key": k} for k in (existing_keys or [])]
-    mock_paginator.paginate.return_value = [{"Contents": contents}] if contents else [{}]
+    mock_paginator.paginate.return_value = (
+        [{"Contents": contents}] if contents else [{}]
+    )
     mock_s3_client.get_paginator.return_value = mock_paginator
 
     mock_s3_service = mocker.Mock(spec=S3Service)
@@ -65,6 +68,7 @@ def _make_runtime(mocker: MockerFixture, existing_keys: list[str] | None = None)
 # ---------------------------------------------------------------------------
 # TestWhoUrlCollectorNode
 # ---------------------------------------------------------------------------
+
 
 class TestWhoUrlCollectorNode:
     def test_wraps_absolute_urls_as_pdf_records(self, mocker: MockerFixture):
@@ -89,7 +93,10 @@ class TestWhoUrlCollectorNode:
         ):
             result = who_url_collector_node(AgentState())
 
-        assert result["who_pdf_records"][0].pdf_url == "https://www.who.int/publications/i/item/guide.pdf"
+        assert (
+            result["who_pdf_records"][0].pdf_url
+            == "https://www.who.int/publications/i/item/guide.pdf"
+        )
 
     def test_filters_none_and_empty_urls(self, mocker: MockerFixture):
         with patch(
@@ -109,7 +116,9 @@ class TestWhoUrlCollectorNode:
             captured["url"] = url
             return {"https://www.who.int/pub/guide.pdf"}
 
-        with patch("app.agent.guideline_scraper.nodes.who_pdf_url_list", fake_who_pdf_url_list):
+        with patch(
+            "app.agent.guideline_scraper.nodes.who_pdf_url_list", fake_who_pdf_url_list
+        ):
             who_url_collector_node(AgentState(who_url=custom_url))
 
         assert captured["url"] == custom_url
@@ -119,10 +128,15 @@ class TestWhoUrlCollectorNode:
 # TestCdcUrlCollectorNode
 # ---------------------------------------------------------------------------
 
+
 class TestCdcUrlCollectorNode:
     def test_short_circuits_when_scrape_cdc_false(self, mocker: MockerFixture):
-        mock_oai = mocker.patch("app.agent.guideline_scraper.nodes.cdc_pdf_url_list_oai")
-        mock_pw = mocker.patch("app.agent.guideline_scraper.nodes.cdc_pdf_url_list_playwright")
+        mock_oai = mocker.patch(
+            "app.agent.guideline_scraper.nodes.cdc_pdf_url_list_oai"
+        )
+        mock_pw = mocker.patch(
+            "app.agent.guideline_scraper.nodes.cdc_pdf_url_list_playwright"
+        )
 
         result = cdc_url_collector_node(AgentState(scrape_cdc=False))
 
@@ -131,8 +145,17 @@ class TestCdcUrlCollectorNode:
         mock_pw.assert_not_called()
 
     def test_uses_oai_results_when_available(self, mocker: MockerFixture):
-        oai_data = [{"pdf_url": "https://stacks.cdc.gov/view/cdc/1/cdc_1_DS1.pdf", "title": "T", "date": "D", "identifier": "I"}]
-        mock_pw = mocker.patch("app.agent.guideline_scraper.nodes.cdc_pdf_url_list_playwright")
+        oai_data = [
+            {
+                "pdf_url": "https://stacks.cdc.gov/view/cdc/1/cdc_1_DS1.pdf",
+                "title": "T",
+                "date": "D",
+                "identifier": "I",
+            }
+        ]
+        mock_pw = mocker.patch(
+            "app.agent.guideline_scraper.nodes.cdc_pdf_url_list_playwright"
+        )
 
         with patch(
             "app.agent.guideline_scraper.nodes.cdc_pdf_url_list_oai",
@@ -147,7 +170,13 @@ class TestCdcUrlCollectorNode:
         mock_pw.assert_not_called()
 
     def test_falls_back_to_playwright_when_oai_empty(self, mocker: MockerFixture):
-        pw_data = [{"pdf_url": "https://stacks.cdc.gov/guidelines/doc.pdf", "title": "Doc", "page_url": "https://stacks.cdc.gov"}]
+        pw_data = [
+            {
+                "pdf_url": "https://stacks.cdc.gov/guidelines/doc.pdf",
+                "title": "Doc",
+                "page_url": "https://stacks.cdc.gov",
+            }
+        ]
 
         with patch(
             "app.agent.guideline_scraper.nodes.cdc_pdf_url_list_oai",
@@ -182,7 +211,9 @@ class TestCdcUrlCollectorNode:
         with patch(
             "app.agent.guideline_scraper.nodes.cdc_pdf_url_list_oai",
             new_callable=AsyncMock,
-            return_value=[{"pdf_url": "https://stacks.cdc.gov/view/cdc/1/cdc_1_DS1.pdf"}],
+            return_value=[
+                {"pdf_url": "https://stacks.cdc.gov/view/cdc/1/cdc_1_DS1.pdf"}
+            ],
         ):
             result = cdc_url_collector_node(AgentState(scrape_cdc=True))
 
@@ -192,6 +223,7 @@ class TestCdcUrlCollectorNode:
 # ---------------------------------------------------------------------------
 # TestMergeRecordsNode
 # ---------------------------------------------------------------------------
+
 
 class TestMergeRecordsNode:
     def test_merges_who_and_cdc_records(self):
@@ -268,6 +300,7 @@ class TestMergeRecordsNode:
 # TestDownloadAndUploadNode
 # ---------------------------------------------------------------------------
 
+
 class TestDownloadAndUploadNode:
     def test_uploads_pdf_to_minio(self, mocker: MockerFixture):
         runtime, s3_client = _make_runtime(mocker, existing_keys=[])
@@ -304,7 +337,9 @@ class TestDownloadAndUploadNode:
         assert call_kwargs.get("ExtraArgs") == {"ContentType": "application/pdf"}
 
     def test_skips_existing_minio_key(self, mocker: MockerFixture):
-        runtime, s3_client = _make_runtime(mocker, existing_keys=["raw-pdfs/who/guide.pdf"])
+        runtime, s3_client = _make_runtime(
+            mocker, existing_keys=["raw-pdfs/who/guide.pdf"]
+        )
         state = AgentState(
             all_pdf_records=[_make_pdf_record("https://who.int/pub/guide.pdf", "who")]
         )
@@ -362,7 +397,9 @@ class TestDownloadAndUploadNode:
         state = AgentState(
             all_pdf_records=[
                 _make_pdf_record("https://who.int/success.pdf", "who"),
-                _make_pdf_record("https://stacks.cdc.gov/skip.pdf", "cdc"),   # key = raw-pdfs/cdc/skip.pdf
+                _make_pdf_record(
+                    "https://stacks.cdc.gov/skip.pdf", "cdc"
+                ),  # key = raw-pdfs/cdc/skip.pdf
                 _make_pdf_record("https://who.int/fail.pdf", "who"),
             ]
         )
@@ -409,6 +446,7 @@ class TestDownloadAndUploadNode:
 # TestGuidelineScraperEdges
 # ---------------------------------------------------------------------------
 
+
 class TestGuidelineScraperEdges:
     def test_route_entry_goes_to_who_when_scrape_who_true(self):
         result = route_entry(AgentState(scrape_who=True))
@@ -448,6 +486,7 @@ class TestGuidelineScraperEdges:
 # TestGuidelineScraperAgentIntegration
 # ---------------------------------------------------------------------------
 
+
 class TestGuidelineScraperAgentIntegration:
     @pytest.fixture
     def agent_context(self, mocker: MockerFixture) -> AgentContext:
@@ -468,12 +507,29 @@ class TestGuidelineScraperAgentIntegration:
         from app.agent.guideline_scraper.main import agent
 
         who_data = {"https://www.who.int/pub/guide.pdf"}
-        cdc_data = [{"pdf_url": "https://stacks.cdc.gov/view/cdc/1/cdc_1_DS1.pdf", "title": "CDC Guide"}]
+        cdc_data = [
+            {
+                "pdf_url": "https://stacks.cdc.gov/view/cdc/1/cdc_1_DS1.pdf",
+                "title": "CDC Guide",
+            }
+        ]
 
         with (
-            patch("app.agent.guideline_scraper.nodes.who_pdf_url_list", new_callable=AsyncMock, return_value=who_data),
-            patch("app.agent.guideline_scraper.nodes.cdc_pdf_url_list_oai", new_callable=AsyncMock, return_value=cdc_data),
-            patch("app.agent.guideline_scraper.nodes.download_pdf_to_bytes", new_callable=AsyncMock, return_value=b"%PDF"),
+            patch(
+                "app.agent.guideline_scraper.nodes.who_pdf_url_list",
+                new_callable=AsyncMock,
+                return_value=who_data,
+            ),
+            patch(
+                "app.agent.guideline_scraper.nodes.cdc_pdf_url_list_oai",
+                new_callable=AsyncMock,
+                return_value=cdc_data,
+            ),
+            patch(
+                "app.agent.guideline_scraper.nodes.download_pdf_to_bytes",
+                new_callable=AsyncMock,
+                return_value=b"%PDF",
+            ),
         ):
             final_state = {}
             config = {"configurable": {"thread_id": "test-full-run"}}
@@ -493,8 +549,16 @@ class TestGuidelineScraperAgentIntegration:
         cdc_data = [{"pdf_url": "https://stacks.cdc.gov/view/cdc/1/cdc_1_DS1.pdf"}]
 
         with (
-            patch("app.agent.guideline_scraper.nodes.cdc_pdf_url_list_oai", new_callable=AsyncMock, return_value=cdc_data),
-            patch("app.agent.guideline_scraper.nodes.download_pdf_to_bytes", new_callable=AsyncMock, return_value=b"%PDF"),
+            patch(
+                "app.agent.guideline_scraper.nodes.cdc_pdf_url_list_oai",
+                new_callable=AsyncMock,
+                return_value=cdc_data,
+            ),
+            patch(
+                "app.agent.guideline_scraper.nodes.download_pdf_to_bytes",
+                new_callable=AsyncMock,
+                return_value=b"%PDF",
+            ),
         ):
             node_names_visited = []
             config = {"configurable": {"thread_id": "test-cdc-only"}}
@@ -512,9 +576,21 @@ class TestGuidelineScraperAgentIntegration:
         from app.agent.guideline_scraper.main import agent
 
         with (
-            patch("app.agent.guideline_scraper.nodes.who_pdf_url_list", new_callable=AsyncMock, return_value=set()),
-            patch("app.agent.guideline_scraper.nodes.cdc_pdf_url_list_oai", new_callable=AsyncMock, return_value=[]),
-            patch("app.agent.guideline_scraper.nodes.cdc_pdf_url_list_playwright", new_callable=AsyncMock, return_value=[]),
+            patch(
+                "app.agent.guideline_scraper.nodes.who_pdf_url_list",
+                new_callable=AsyncMock,
+                return_value=set(),
+            ),
+            patch(
+                "app.agent.guideline_scraper.nodes.cdc_pdf_url_list_oai",
+                new_callable=AsyncMock,
+                return_value=[],
+            ),
+            patch(
+                "app.agent.guideline_scraper.nodes.cdc_pdf_url_list_playwright",
+                new_callable=AsyncMock,
+                return_value=[],
+            ),
         ):
             node_names_visited = []
             final_state = {}

@@ -18,6 +18,7 @@ import pytest
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _oai_xml(records: list[dict], resumption_token: str | None = None) -> str:
     """Build a minimal OAI-PMH ListRecords XML response for testing."""
     record_blocks = ""
@@ -63,6 +64,7 @@ def _make_httpx_response(text: str, status_code: int = 200) -> MagicMock:
 # TestCdcPdfUrlListOai
 # ---------------------------------------------------------------------------
 
+
 class TestCdcPdfUrlListOai:
     # httpx and asyncio are imported locally inside cdc_pdf_url_list_oai,
     # so we patch at the real module level ("httpx.AsyncClient", "asyncio.sleep").
@@ -70,10 +72,20 @@ class TestCdcPdfUrlListOai:
     def test_returns_records_with_pdf_url_and_metadata(self):
         from app.services.scrapper import cdc_pdf_url_list_oai
 
-        xml = _oai_xml([
-            {"identifier": "oai:stacks.cdc.gov:cdc/12345", "title": "Guide A", "date": "2024-01"},
-            {"identifier": "oai:stacks.cdc.gov:cdc/67890", "title": "Guide B", "date": "2023-06"},
-        ])
+        xml = _oai_xml(
+            [
+                {
+                    "identifier": "oai:stacks.cdc.gov:cdc/12345",
+                    "title": "Guide A",
+                    "date": "2024-01",
+                },
+                {
+                    "identifier": "oai:stacks.cdc.gov:cdc/67890",
+                    "title": "Guide B",
+                    "date": "2023-06",
+                },
+            ]
+        )
 
         mock_resp = _make_httpx_response(xml)
         mock_client = AsyncMock()
@@ -96,10 +108,12 @@ class TestCdcPdfUrlListOai:
     def test_skips_deleted_records(self):
         from app.services.scrapper import cdc_pdf_url_list_oai
 
-        xml = _oai_xml([
-            {"identifier": "oai:stacks.cdc.gov:cdc/111", "status": "deleted"},
-            {"identifier": "oai:stacks.cdc.gov:cdc/222"},
-        ])
+        xml = _oai_xml(
+            [
+                {"identifier": "oai:stacks.cdc.gov:cdc/111", "status": "deleted"},
+                {"identifier": "oai:stacks.cdc.gov:cdc/222"},
+            ]
+        )
 
         mock_resp = _make_httpx_response(xml)
         mock_client = AsyncMock()
@@ -122,7 +136,9 @@ class TestCdcPdfUrlListOai:
         from app.services.scrapper import cdc_pdf_url_list_oai
 
         # Page 1: 3 records + resumptionToken (would normally trigger page 2)
-        page1_records = [{"identifier": f"oai:stacks.cdc.gov:cdc/{i}"} for i in range(1, 4)]
+        page1_records = [
+            {"identifier": f"oai:stacks.cdc.gov:cdc/{i}"} for i in range(1, 4)
+        ]
         page1_xml = _oai_xml(page1_records, resumption_token="tok-next")
 
         # Page 2: should NOT be fetched once max_records=3 is satisfied after page 1
@@ -150,7 +166,10 @@ class TestCdcPdfUrlListOai:
         from app.services.scrapper import cdc_pdf_url_list_oai
 
         page1_xml = _oai_xml(
-            [{"identifier": "oai:stacks.cdc.gov:cdc/1"}, {"identifier": "oai:stacks.cdc.gov:cdc/2"}],
+            [
+                {"identifier": "oai:stacks.cdc.gov:cdc/1"},
+                {"identifier": "oai:stacks.cdc.gov:cdc/2"},
+            ],
             resumption_token="tok-abc",
         )
         page2_xml = _oai_xml(
@@ -225,6 +244,7 @@ class TestCdcPdfUrlListOai:
 # TestCdcPdfUrlListPlaywright
 # ---------------------------------------------------------------------------
 
+
 class TestCdcPdfUrlListPlaywright:
     def _make_playwright_mocks(
         self,
@@ -269,11 +289,23 @@ class TestCdcPdfUrlListPlaywright:
         from app.services.scrapper import cdc_pdf_url_list_playwright
 
         page1_links = [
-            {"pdf_url": "https://example.com/a.pdf", "title": "A", "page_url": "https://example.com/p1"},
-            {"pdf_url": "https://example.com/b.pdf", "title": "B", "page_url": "https://example.com/p1"},
+            {
+                "pdf_url": "https://example.com/a.pdf",
+                "title": "A",
+                "page_url": "https://example.com/p1",
+            },
+            {
+                "pdf_url": "https://example.com/b.pdf",
+                "title": "B",
+                "page_url": "https://example.com/p1",
+            },
         ]
         page2_links = [
-            {"pdf_url": "https://example.com/c.pdf", "title": "C", "page_url": "https://example.com/p2"},
+            {
+                "pdf_url": "https://example.com/c.pdf",
+                "title": "C",
+                "page_url": "https://example.com/p2",
+            },
         ]
         mock_playwright, _ = self._make_playwright_mocks(
             pages_links=[page1_links, page2_links],
@@ -289,12 +321,20 @@ class TestCdcPdfUrlListPlaywright:
 
         assert len(results) == 3
         urls = {r["pdf_url"] for r in results}
-        assert urls == {"https://example.com/a.pdf", "https://example.com/b.pdf", "https://example.com/c.pdf"}
+        assert urls == {
+            "https://example.com/a.pdf",
+            "https://example.com/b.pdf",
+            "https://example.com/c.pdf",
+        }
 
     def test_deduplicates_pdf_links(self):
         from app.services.scrapper import cdc_pdf_url_list_playwright
 
-        same_link = {"pdf_url": "https://example.com/dup.pdf", "title": "Dup", "page_url": "https://example.com"}
+        same_link = {
+            "pdf_url": "https://example.com/dup.pdf",
+            "title": "Dup",
+            "page_url": "https://example.com",
+        }
         mock_playwright, _ = self._make_playwright_mocks(
             pages_links=[[same_link], [same_link]],
             next_btn_states=[(True, False), (False, True)],
@@ -310,7 +350,13 @@ class TestCdcPdfUrlListPlaywright:
     def test_stops_when_no_next_button(self):
         from app.services.scrapper import cdc_pdf_url_list_playwright
 
-        page1_links = [{"pdf_url": "https://example.com/only.pdf", "title": "Only", "page_url": "https://example.com"}]
+        page1_links = [
+            {
+                "pdf_url": "https://example.com/only.pdf",
+                "title": "Only",
+                "page_url": "https://example.com",
+            }
+        ]
         mock_playwright, _ = self._make_playwright_mocks(
             pages_links=[page1_links],
             # Immediately not visible → stop after first page
@@ -328,6 +374,7 @@ class TestCdcPdfUrlListPlaywright:
 # ---------------------------------------------------------------------------
 # TestDownloadPdfToBytes
 # ---------------------------------------------------------------------------
+
 
 class TestDownloadPdfToBytes:
     # httpx is imported locally inside download_pdf_to_bytes, so we patch
