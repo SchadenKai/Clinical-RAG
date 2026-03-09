@@ -194,6 +194,39 @@ class TestCdcPdfUrlListOai:
         assert len(results) == 3
         assert mock_client.get.call_count == 2
 
+    def test_returns_partial_results_on_malformed_xml(self):
+        """
+        When a page returns malformed XML, the function breaks out of the loop
+        and returns whatever records were collected on previous pages — it must
+        not raise ET.ParseError to the caller.
+        """
+        from app.services.scrapper import cdc_pdf_url_list_oai
+
+        page1_xml = _oai_xml(
+            [{"identifier": "oai:stacks.cdc.gov:cdc/1"}],
+            resumption_token="tok-bad",
+        )
+        bad_xml_resp = _make_httpx_response("<broken xml <<< not valid")
+        bad_xml_resp.status_code = 200
+
+        mock_client = AsyncMock()
+        mock_client.get = AsyncMock(
+            side_effect=[
+                _make_httpx_response(page1_xml),
+                bad_xml_resp,
+            ]
+        )
+
+        with patch("httpx.AsyncClient") as mock_cls:
+            mock_cls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+            with patch("asyncio.sleep", new_callable=AsyncMock):
+                results = asyncio.run(cdc_pdf_url_list_oai())
+
+        # Returns the 1 record from page 1; does not raise
+        assert len(results) == 1
+        assert "1" in results[0]["pdf_url"]
+
     def test_resumption_token_params_exclude_metadata_prefix(self):
         from app.services.scrapper import cdc_pdf_url_list_oai
 

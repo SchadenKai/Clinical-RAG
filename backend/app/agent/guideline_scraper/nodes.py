@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import io
 import re
 from urllib.parse import urlparse
@@ -192,9 +193,19 @@ def download_and_upload_node(state: AgentState, runtime: Runtime[AgentContext]) 
 
 
 def _derive_filename(record: PdfRecord) -> str:
-    """Derive a safe MinIO filename from a PdfRecord's URL."""
+    """Derive a safe MinIO filename from a PdfRecord's URL.
+
+    Falls back to a deterministic sha256-based name when the URL path has no
+    meaningful last segment (empty string or dots only), ensuring MinIO keys
+    like raw-pdfs/who/.pdf are never produced.
+    """
     path = urlparse(record.pdf_url).path
     filename = path.rstrip("/").split("/")[-1]
+
+    # Guard: empty or dot-only segment → use a short deterministic hash of the URL
+    if not filename or all(c == "." for c in filename):
+        filename = hashlib.sha256(record.pdf_url.encode()).hexdigest()[:8]
+
     if not filename.lower().endswith(".pdf"):
         filename += ".pdf"
     # Replace any non-alphanumeric chars (except hyphens and dots) with underscores

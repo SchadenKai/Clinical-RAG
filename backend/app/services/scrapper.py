@@ -266,9 +266,17 @@ async def cdc_pdf_url_list_oai(
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         while True:
-            resp = await client.get(base_url, params=params)
-            resp.raise_for_status()
-            root = ET.fromstring(resp.text)
+            try:
+                resp = await client.get(base_url, params=params)
+                resp.raise_for_status()
+                root = ET.fromstring(resp.text)
+            except ET.ParseError as exc:
+                print(
+                    f"[ERROR] Malformed XML from OAI-PMH endpoint: {exc} | "
+                    f"status={resp.status_code} | base_url={base_url} | "
+                    f"params={params} | body_preview={resp.text[:200]!r}"
+                )
+                break
 
             for record in root.findall(f".//{{{OAI_NS}}}record"):
                 header = record.find(f"{{{OAI_NS}}}header")

@@ -443,6 +443,62 @@ class TestDownloadAndUploadNode:
 
 
 # ---------------------------------------------------------------------------
+# TestDeriveFilename
+# ---------------------------------------------------------------------------
+
+
+class TestDeriveFilename:
+    """Tests for the _derive_filename private helper in nodes.py."""
+
+    def test_normal_url_uses_last_path_segment(self):
+        from app.agent.guideline_scraper.nodes import _derive_filename
+
+        record = _make_pdf_record("https://who.int/pub/guidelines/cardiac-care.pdf")
+        assert _derive_filename(record) == "cardiac-care.pdf"
+
+    def test_appends_pdf_suffix_when_missing(self):
+        from app.agent.guideline_scraper.nodes import _derive_filename
+
+        record = _make_pdf_record("https://who.int/pub/guidelines/cardiac-care")
+        result = _derive_filename(record)
+        assert result.endswith(".pdf")
+
+    def test_fallback_for_empty_path(self):
+        from app.agent.guideline_scraper.nodes import _derive_filename
+
+        # URL with no path segment at all — path resolves to ""
+        record = _make_pdf_record("https://stacks.cdc.gov")
+        result = _derive_filename(record)
+        assert result.endswith(".pdf")
+        assert not result.startswith(".")
+        assert len(result) > len(".pdf")
+
+    def test_fallback_for_root_path(self):
+        from app.agent.guideline_scraper.nodes import _derive_filename
+
+        # URL whose path is exactly "/" — last segment after rstrip is ""
+        record = _make_pdf_record("https://stacks.cdc.gov/")
+        result = _derive_filename(record)
+        assert result.endswith(".pdf")
+        assert not result.startswith(".")
+
+    def test_fallback_is_deterministic(self):
+        from app.agent.guideline_scraper.nodes import _derive_filename
+
+        record = _make_pdf_record("https://stacks.cdc.gov/")
+        assert _derive_filename(record) == _derive_filename(record)
+
+    def test_sanitizes_special_characters(self):
+        from app.agent.guideline_scraper.nodes import _derive_filename
+
+        record = _make_pdf_record("https://who.int/pub/guide line (2024).pdf")
+        result = _derive_filename(record)
+        assert " " not in result
+        assert "(" not in result
+        assert ")" not in result
+
+
+# ---------------------------------------------------------------------------
 # TestGuidelineScraperEdges
 # ---------------------------------------------------------------------------
 
