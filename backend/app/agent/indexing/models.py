@@ -20,6 +20,7 @@ class ProgressStatusEnum(enum.Enum):
     INDEXING = "Indexing"
     DONE = "Done"
 
+
 class SourceClass(enum.Enum):
     WHO = "who"
     CDC = "cdc"

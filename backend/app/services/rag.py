@@ -16,6 +16,7 @@ from app.rag.embeddings import EmbeddingService
 from app.services.file_store.db import S3Service
 from app.services.llm.factory import ChatModelService
 from app.services.llm.tokenizer import TokenizerService
+from app.services.reranking import RerankerService
 
 
 class IndexingService:
@@ -141,6 +142,7 @@ class RetrievalService:
         tokenizer_service: TokenizerService,
         settings: Settings,
         chat_model_service: ChatModelService,
+        reranker_service: RerankerService,
     ):
         self.retriever_agent: CompiledStateGraph = retriever_agent
         self.chunker_service: ChunkerService = chunker_service
@@ -149,6 +151,7 @@ class RetrievalService:
         self.tokenizer_service: TokenizerService = tokenizer_service
         self.chat_model_service: ChatModelService = chat_model_service
         self.settings: Settings = settings
+        self.reranker_service: RerankerService = reranker_service
 
     def retrieve_documents(
         self,
@@ -166,6 +169,7 @@ class RetrievalService:
             tokenizer=self.tokenizer_service,
             db_client=db_client,
             chat_model=chat_model,
+            reranker=self.reranker_service,
             include_generation=is_llm_enabled,
             settings=self.settings,
         )

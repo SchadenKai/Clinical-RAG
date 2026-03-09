@@ -13,6 +13,7 @@ from app.routes.dependencies.embedding import get_embedding
 from app.routes.dependencies.file_store import get_s3_service
 from app.routes.dependencies.indexing_agent import get_indexing_agent
 from app.routes.dependencies.llm import get_chat_model_service
+from app.routes.dependencies.reranking import get_reranker_service
 from app.routes.dependencies.retriever_agent import get_retriever_agent
 from app.routes.dependencies.settings import get_app_settings
 from app.routes.dependencies.tokenizer import get_tokenizer_service
@@ -21,6 +22,7 @@ from app.services.file_store.db import S3Service
 from app.services.llm.factory import ChatModelService
 from app.services.llm.tokenizer import TokenizerService
 from app.services.rag import IndexingService, RetrievalService
+from app.services.reranking import RerankerService
 
 
 @lru_cache
@@ -32,6 +34,7 @@ def get_retrieval_service(
     retriever_agent: Annotated[CompiledStateGraph, Depends(get_retriever_agent)],
     chunker_service: Annotated[ChunkerService, Depends(get_chunker)],
     settings: Annotated[Settings, Depends(get_app_settings)],
+    reranker_service: Annotated[RerankerService, Depends(get_reranker_service)],
 ) -> RetrievalService:
     return RetrievalService(
         embedding_service=embedding_service,
@@ -41,6 +44,7 @@ def get_retrieval_service(
         retriever_agent=retriever_agent,
         chunker_service=chunker_service,
         settings=settings,
+        reranker_service=reranker_service,
     )
 
 
@@ -52,6 +56,7 @@ def get_retriever_service_manual() -> RetrievalService:
     vector_db = get_vector_client(embedding_service, tokenizer)
     chat_model_service = get_chat_model_service(settings)
     retriever_agent = get_retriever_agent()
+    reranker_service = get_reranker_service(settings, chat_model_service, vector_db)
     return RetrievalService(
         embedding_service=embedding_service,
         vector_db_service=vector_db,
@@ -60,6 +65,7 @@ def get_retriever_service_manual() -> RetrievalService:
         retriever_agent=retriever_agent,
         chunker_service=chunker_service,
         settings=settings,
+        reranker_service=reranker_service,
     )
 
 

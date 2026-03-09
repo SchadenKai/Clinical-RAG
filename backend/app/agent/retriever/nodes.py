@@ -4,6 +4,9 @@ from typing import Literal
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.runtime import Runtime
+from pymilvus import AnnSearchRequest, RRFRanker
+
+from app.logger import app_logger
 
 from .context import AgentContext
 from .models import SafetyClassificationEnum, SafetyClassifierSOModel
@@ -110,13 +113,27 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
         state.embedded_query = [state.embedded_query]
     start_time = time.time()
     runtime.context.db_client.use_database(runtime.context.settings.milvus_db_name)
-    res = runtime.context.db_client.search(
-        collection_name=runtime.context.settings.milvus_collection_name,
-        anns_field="vector",
+
+    search_limit = runtime.context.settings.search_limit
+    dense_req = AnnSearchRequest(
         data=state.embedded_query,
+        anns_field="vector",
+        param={"metric_type": "IP", "params": {"radius": 0.5, "range_filter": 1.0}},
+        limit=search_limit,
+    )
+    sparse_req = AnnSearchRequest(
+        data=[state.input_query],
+        anns_field="sparse_vector",
+        param={"metric_type": "BM25"},
+        limit=search_limit,
+    )
+
+    res = runtime.context.db_client.hybrid_search(
+        collection_name=runtime.context.settings.milvus_collection_name,
+        reqs=[dense_req, sparse_req],
+        ranker=RRFRanker(k=runtime.context.settings.rrf_k),
         output_fields=["text", "category", "source"],
-        limit=3,
-        # TODO: connect this later in agent context
+        limit=runtime.context.settings.reranker_top_k * 3,
         search_params={
             "radius": 0.5,  # Lower score threshold
             "range_filter": 1.0,  # Upper score threshold
@@ -124,7 +141,12 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
     )
     search_duration_ms = (time.time() - start_time) * 1000
     res = res[0]
-    res = [{**doc.fields, "score": doc.score * 100, "id": doc.id} for doc in res]
+    res = [{**doc.entity, "score": doc.distance, "id": doc.id} for doc in res]
+    res = [
+        doc
+        for doc in res
+        if doc["score"] >= runtime.context.settings.search_score_threshold
+    ]
     sources = [doc["source"] for doc in res]
     return state.model_copy(
         update={
@@ -134,6 +156,33 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
                 "search_duration_ms": search_duration_ms,
                 **state.run_metadata,
             },
+        }
+    )
+
+
+def rerank_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
+    if not state.documents:
+        return state
+
+    start_time = time.time()
+    reranked_docs = runtime.context.reranker.rerank(
+        query=state.input_query,
+        documents=state.documents,
+        top_k=runtime.context.settings.reranker_top_k,
+    )
+    rerank_duration_ms = (time.time() - start_time) * 1000
+
+    sources = [doc.get("source") for doc in reranked_docs if "source" in doc]
+
+    # Update run metadata if needed
+    new_metadata = dict(state.run_metadata) if state.run_metadata else {}
+    new_metadata["rerank_duration_ms"] = rerank_duration_ms
+
+    return state.model_copy(
+        update={
+            "documents": reranked_docs,
+            "sources": sources,
+            "run_metadata": new_metadata,
         }
     )
 
@@ -185,7 +234,7 @@ def citation_verification(state: AgentState) -> AgentState:
             )
             is_verified_citation = False
             continue
-        if int(citation[0]) >= len(citation) or int(citation[0]) < 0:
+        if int(citation[0]) >= len(state.sources) or int(citation[0]) < 0:
             wrong_citations.append(
                 f"INDEX ERROR: Citation index in {citation} is not the correct."
                 f"Citations: {state.sources}"
@@ -219,11 +268,10 @@ def citation_verification(state: AgentState) -> AgentState:
 def is_citation_correct(
     state: AgentState,
 ) -> Literal["final_report_generation", "__end__"]:
-    print(f"[DEBUG] Checking citation state: {state.is_verified_citations}")
+    app_logger.debug(f"Checking citation state: {state.is_verified_citations}")
     if state.is_verified_citations:
         return "__end__"
-    print(f"[DEBUG] The wrong citations: {state.final_answer}")
-    print(f"[DEBUG] The wrong citations: {state.wrong_citations}")
+    app_logger.debug(f"Wrong citations: {state.wrong_citations}")
     return "final_report_generation"
 
 

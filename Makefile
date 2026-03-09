@@ -1,6 +1,9 @@
 setup-dev:
 	cd backend && uv sync --all-extras && playwright install
 
+run-backend-tests:
+	make setup-dev && uv run pytest
+
 run-containers:
 	cd deployment && docker compose up -d --build --force-recreate
 
