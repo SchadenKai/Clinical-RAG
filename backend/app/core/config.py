@@ -45,6 +45,13 @@ class Settings(BaseSettings):
 
     rag_metrics_threshold: float = 0.7
 
+    # reranker config
+    reranker_provider: str = os.environ.get("RERANKER_PROVIDER", "slm")
+    reranker_model: str = os.environ.get(
+        "RERANKER_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    )
+    reranker_top_k: int = int(os.environ.get("RERANKER_TOP_K", "3"))
+
     # model config
     embedding_provider: str = os.environ.get("EMBEDDING_PROVIDER", "openai")
     embedding_api_key: str = os.environ.get("EMBEDDING_API_KEY", "")

@@ -9,8 +9,6 @@ from app.routes.dependencies.settings import get_app_settings
 from app.routes.dependencies.tokenizer import get_tokenizer_service
 from app.services.document_converter import doc_converter
 from app.services.file_store.context_manager import S3FileStager
-from pymilvus import WeightedRanker, RRFRanker
-from pymilvus.client.abstract import BaseRanker
 
 _FILE_NAME = "Galaxy - Wikipedia.pdf"
 MD_FILE_DEST = "test_md_1.md"
@@ -28,7 +26,7 @@ with S3FileStager(
     doc = doc_converter(file_path)
     with open(file=DOCLING_DOCUMENT_DEST, mode="w", encoding="utf-8") as f:
         json.dump(doc, f, indent=4, ensure_ascii=False)
-    
+
     md_text = doc.export_to_markdown()
     with open(file=MD_FILE_DEST, mode="w", encoding="utf-8") as f:
         f.write(md_text)
