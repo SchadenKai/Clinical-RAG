@@ -170,9 +170,7 @@ class RerankerService:
         # Milvus rankers integrate with external similarity scores.
         # For now, return docs sorted by any existing score or order
         if "score" in docs[0]:
-            return sorted(docs, key=lambda x: x.get("score", 0.0), reverse=True)[
-                :top_k
-            ]
+            return sorted(docs, key=lambda x: x.get("score", 0.0), reverse=True)[:top_k]
         else:
             app_logger.warning(
                 f"Milvus ranker {self.provider} implementation incomplete; returning docs in original order"

@@ -28,9 +28,7 @@ def test_reranker_service_slm(mock_cross_encoder, sample_documents):
     mock_model_instance.predict.return_value = [1.0, 9.5, 5.0]
     mock_cross_encoder.return_value = mock_model_instance
 
-    service = RerankerService(
-        provider="slm", model_name="dummy/model"
-    )
+    service = RerankerService(provider="slm", model_name="dummy/model")
 
     # Execution
     reranked = service.rerank("relevant query", sample_documents, top_k=2)
