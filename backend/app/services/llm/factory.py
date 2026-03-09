@@ -1,11 +1,9 @@
 from langchain_anthropic.chat_models import ChatAnthropic
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import HumanMessage
 from langchain_google_genai.chat_models import ChatGoogleGenerativeAI
 from langchain_nebius.chat_models import ChatNebius
 from langchain_openai import ChatOpenAI
 from langchain_openrouter import ChatOpenRouter
-from pydantic import BaseModel, Field
 
 from app.core.config import settings
 from app.logger import app_logger
@@ -51,78 +49,3 @@ class ChatModelService:
     def test_chat_model(self) -> None:
         res = self.client.invoke("")
         app_logger.info(f"Testing chat model results: {res.content}")
-
-
-class RerankScore(BaseModel):
-    score: float = Field(
-        description="Relevance score of the document to the query, from 0.0 to 10.0"
-    )
-
-
-class RerankerService:
-    def __init__(
-        self,
-        provider: str,
-        model_name: str,
-        api_key: str,
-        chat_model_service: "ChatModelService | None" = None,
-    ):
-        self.provider = provider
-        self.model_name = model_name
-        self.api_key = api_key
-        self._slm_model = None
-        self._chat_model_service = chat_model_service
-
-    def rerank(self, query: str, documents: list[dict], top_k: int = 5) -> list[dict]:
-        if not documents:
-            return documents
-
-        if self.provider == "slm":
-            if not self._slm_model:
-                from sentence_transformers import CrossEncoder
-
-                self._slm_model = CrossEncoder(self.model_name)
-
-            docs = [dict(d) for d in documents]
-            pairs = [[query, doc.get("text", "")] for doc in docs]
-            scores = self._slm_model.predict(pairs)
-
-            for i, doc in enumerate(docs):
-                doc["rerank_score"] = float(scores[i])
-
-            return sorted(docs, key=lambda x: x.get("rerank_score", 0.0), reverse=True)[
-                :top_k
-            ]
-
-        elif self.provider == "llm":
-            chat_service = self._chat_model_service or ChatModelService(
-                provider=settings.llm_provider,
-                model_name=self.model_name,
-                api_key=self.api_key or settings.llm_api_key,
-            )
-            chat_model = chat_service.client
-            structured_model = chat_model.with_structured_output(schema=RerankScore)
-
-            docs = [dict(d) for d in documents]
-            for doc in docs:
-                prompt = (
-                    f"Query: '{query}'\n"
-                    f"Document: '{doc.get('text', '')[:2000]}'\n\n"
-                    "Evaluate the relevance of this document to the query. "
-                    "Provide a score from 0.0 to 10.0 where 10.0 is highly relevant."
-                )
-                try:
-                    res = structured_model.invoke([HumanMessage(content=prompt)])
-                    doc["rerank_score"] = res.score if res else 0.0
-                except Exception as e:
-                    app_logger.error(f"LLM reranking failed for a document: {e}")
-                    doc["rerank_score"] = 0.0
-
-            return sorted(docs, key=lambda x: x.get("rerank_score", 0.0), reverse=True)[
-                :top_k
-            ]
-        else:
-            raise ValueError(
-                f"Unknown reranker provider: {self.provider!r}. "
-                "Valid providers are 'slm' and 'llm'."
-            )

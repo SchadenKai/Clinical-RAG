@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from app.services.llm.factory import RerankerService
+from app.services.reranking import RerankerService
 
 
 @pytest.fixture
@@ -20,7 +20,7 @@ def sample_documents():
     ]
 
 
-@patch("app.services.llm.factory.CrossEncoder")
+@patch("app.services.reranking.service.CrossEncoder")
 def test_reranker_service_slm(mock_cross_encoder, sample_documents):
     # Mock the predict method to return explicit scores
     mock_model_instance = MagicMock()
@@ -29,7 +29,7 @@ def test_reranker_service_slm(mock_cross_encoder, sample_documents):
     mock_cross_encoder.return_value = mock_model_instance
 
     service = RerankerService(
-        provider="slm", model_name="dummy/model", api_key="", chat_model_service=None
+        provider="slm", model_name="dummy/model"
     )
 
     # Execution
@@ -44,8 +44,8 @@ def test_reranker_service_slm(mock_cross_encoder, sample_documents):
     assert "rerank_score" not in sample_documents[0]
 
 
-@patch("app.services.llm.factory.ChatModelService")
-def test_reranker_service_llm(mock_chat_service, sample_documents):
+@patch("app.services.reranking.service.ChatModelService")
+def test_reranker_service_llm(mock_chat_service_class, sample_documents):
     # Mock the chat service and structured output
     mock_client = MagicMock()
     mock_structured_model = MagicMock()
@@ -64,13 +64,16 @@ def test_reranker_service_llm(mock_chat_service, sample_documents):
         return MockResponse()
 
     mock_structured_model.invoke.side_effect = side_effect_invoke
-    mock_chat_service.return_value.client = mock_client
+    mock_chat_service_class.return_value.client = mock_client
+
+    # Create a real mock ChatModelService to pass to RerankerService
+    mock_chat_service = MagicMock()
+    mock_chat_service.client = mock_client
 
     service = RerankerService(
         provider="llm",
         model_name="gpt-4o",
-        api_key="dummy",
-        chat_model_service=None,
+        chat_model_service=mock_chat_service,
     )
 
     # Execution

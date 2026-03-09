@@ -14,7 +14,8 @@ from app.rag.chunker import ChunkerService
 from app.rag.db import VectorClient
 from app.rag.embeddings import EmbeddingService
 from app.services.file_store.db import S3Service
-from app.services.llm.factory import ChatModelService, RerankerService
+from app.services.llm.factory import ChatModelService
+from app.services.reranking import RerankerService
 from app.services.llm.tokenizer import TokenizerService
 
 

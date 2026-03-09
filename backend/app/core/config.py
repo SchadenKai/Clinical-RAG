@@ -45,7 +45,6 @@ class Settings(BaseSettings):
     reranker_model: str = os.environ.get(
         "RERANKER_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2"
     )
-    reranker_api_key: str = os.environ.get("RERANKER_API_KEY", "")
     reranker_top_k: int = int(os.environ.get("RERANKER_TOP_K", "3"))
 
     # model config

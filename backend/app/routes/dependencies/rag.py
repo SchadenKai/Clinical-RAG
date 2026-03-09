@@ -18,22 +18,11 @@ from app.routes.dependencies.settings import get_app_settings
 from app.routes.dependencies.tokenizer import get_tokenizer_service
 from app.routes.dependencies.vector_db import get_vector_client
 from app.services.file_store.db import S3Service
-from app.services.llm.factory import ChatModelService, RerankerService
+from app.services.llm.factory import ChatModelService
 from app.services.llm.tokenizer import TokenizerService
 from app.services.rag import IndexingService, RetrievalService
-
-
-@lru_cache
-def get_reranker_service(
-    settings: Annotated[Settings, Depends(get_app_settings)],
-    chat_model_service: Annotated[ChatModelService, Depends(get_chat_model_service)],
-) -> RerankerService:
-    return RerankerService(
-        provider=settings.reranker_provider,
-        model_name=settings.reranker_model,
-        api_key=settings.reranker_api_key,
-        chat_model_service=chat_model_service,
-    )
+from app.routes.dependencies.reranking import get_reranker_service
+from app.services.reranking import RerankerService
 
 
 @lru_cache
