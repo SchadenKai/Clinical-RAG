@@ -276,7 +276,9 @@ async def cdc_pdf_url_list_oai(
                     continue
 
                 identifier_el = (
-                    header.find(f"{{{OAI_NS}}}identifier") if header is not None else None
+                    header.find(f"{{{OAI_NS}}}identifier")
+                    if header is not None
+                    else None
                 )
                 identifier = identifier_el.text if identifier_el is not None else ""
 

@@ -22,9 +22,9 @@ class AgentState(BaseModel):
     all_pdf_records: Optional[list[PdfRecord]] = None
 
     # Upload results
-    uploaded_keys: Optional[list[str]] = None   # MinIO object keys successfully uploaded
-    failed_urls: Optional[list[str]] = None     # URLs that failed download or upload
-    skipped_urls: Optional[list[str]] = None    # URLs already present in MinIO (dedup)
+    uploaded_keys: Optional[list[str]] = None  # MinIO object keys successfully uploaded
+    failed_urls: Optional[list[str]] = None  # URLs that failed download or upload
+    skipped_urls: Optional[list[str]] = None  # URLs already present in MinIO (dedup)
 
     progress_status: Optional[ScraperProgressEnum] = None
     run_metadata: Optional[dict] = None

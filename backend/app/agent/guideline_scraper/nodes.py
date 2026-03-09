@@ -112,9 +112,7 @@ def merge_records_node(state: AgentState) -> dict:
     }
 
 
-def download_and_upload_node(
-    state: AgentState, runtime: Runtime[AgentContext]
-) -> dict:
+def download_and_upload_node(state: AgentState, runtime: Runtime[AgentContext]) -> dict:
     """
     Downloads each PDF and uploads it to MinIO S3.
 
