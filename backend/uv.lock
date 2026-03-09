@@ -253,6 +253,7 @@ dependencies = [
     { name = "langchain-openrouter" },
     { name = "langchain-text-splitters" },
     { name = "langgraph" },
+    { name = "milvus-model" },
     { name = "orjson" },
     { name = "playwright" },
     { name = "pydantic" },
@@ -312,6 +313,7 @@ requires-dist = [
     { name = "langchain-openrouter", specifier = ">=0.0.2" },
     { name = "langchain-text-splitters", specifier = ">=1.1.0" },
     { name = "langgraph", specifier = ">=1.0.6" },
+    { name = "milvus-model", specifier = ">=0.2.12" },
     { name = "orjson", specifier = ">=3.11.5" },
     { name = "playwright", specifier = ">=1.57.0" },
     { name = "pydantic", specifier = ">=2.12.5" },
@@ -2523,6 +2525,22 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/d6/54/cfe61301667036ec958cb99bd3efefba235e65cdeb9c84d24a8293ba1d90/mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba", size = 8729, upload-time = "2022-08-14T12:40:10.846Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8", size = 9979, upload-time = "2022-08-14T12:40:09.779Z" },
+]
+
+[[package]]
+name = "milvus-model"
+version = "0.2.12"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "onnxruntime" },
+    { name = "protobuf" },
+    { name = "scipy" },
+    { name = "transformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/08/44/5c2189e9c63166f51c543919d2c1dd20a2ea6ff5ae54f43e098fb477036f/milvus_model-0.2.12.tar.gz", hash = "sha256:1d6fd5c416545062a2db4dc910141e323ed9694df78564938b1f62222087eb15", size = 35417, upload-time = "2025-01-14T03:57:51.246Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/78/47/6296998f79f6a60ea51249c7fcad6642fceee2a9acd16b7e8a5dc7d177e2/milvus_model-0.2.12-py3-none-any.whl", hash = "sha256:66c8e2ae2fd6379747af407e34c0b4003d5755fdacf50ae1327a03510e3d2b50", size = 43244, upload-time = "2025-01-14T03:57:49.105Z" },
 ]
 
 [[package]]
