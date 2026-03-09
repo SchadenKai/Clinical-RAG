@@ -90,7 +90,9 @@ class RerankerService:
             for i, doc in enumerate(docs):
                 doc["rerank_score"] = float(scores[i])
 
-            return sorted(docs, key=lambda x: x.get("rerank_score", 0.0), reverse=True)[:top_k]
+            return sorted(docs, key=lambda x: x.get("rerank_score", 0.0), reverse=True)[
+                :top_k
+            ]
 
         elif self.provider == "llm":
             chat_service = self._chat_model_service or ChatModelService(
@@ -116,7 +118,9 @@ class RerankerService:
                     app_logger.error(f"LLM reranking failed for a document: {e}")
                     doc["rerank_score"] = 0.0
 
-            return sorted(docs, key=lambda x: x.get("rerank_score", 0.0), reverse=True)[:top_k]
+            return sorted(docs, key=lambda x: x.get("rerank_score", 0.0), reverse=True)[
+                :top_k
+            ]
         else:
             raise ValueError(
                 f"Unknown reranker provider: {self.provider!r}. "

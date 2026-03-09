@@ -2,13 +2,23 @@ import pytest
 from unittest.mock import MagicMock, patch
 from app.services.llm.factory import RerankerService
 
+
 @pytest.fixture
 def sample_documents():
     return [
-        {"id": "doc1", "text": "This is a completely irrelevant document.", "source": "source1"},
-        {"id": "doc2", "text": "This document is highly relevant to the query.", "source": "source2"},
+        {
+            "id": "doc1",
+            "text": "This is a completely irrelevant document.",
+            "source": "source1",
+        },
+        {
+            "id": "doc2",
+            "text": "This document is highly relevant to the query.",
+            "source": "source2",
+        },
         {"id": "doc3", "text": "This is somewhat relevant.", "source": "source3"},
     ]
+
 
 @patch("app.services.llm.factory.CrossEncoder")
 def test_reranker_service_slm(mock_cross_encoder, sample_documents):
@@ -18,7 +28,9 @@ def test_reranker_service_slm(mock_cross_encoder, sample_documents):
     mock_model_instance.predict.return_value = [1.0, 9.5, 5.0]
     mock_cross_encoder.return_value = mock_model_instance
 
-    service = RerankerService(provider="slm", model_name="dummy/model", api_key="", chat_model_service=None)
+    service = RerankerService(
+        provider="slm", model_name="dummy/model", api_key="", chat_model_service=None
+    )
 
     # Execution
     reranked = service.rerank("relevant query", sample_documents, top_k=2)
@@ -31,24 +43,26 @@ def test_reranker_service_slm(mock_cross_encoder, sample_documents):
     # Verify original documents are not mutated
     assert "rerank_score" not in sample_documents[0]
 
+
 @patch("app.services.llm.factory.ChatModelService")
 def test_reranker_service_llm(mock_chat_service, sample_documents):
     # Mock the chat service and structured output
     mock_client = MagicMock()
     mock_structured_model = MagicMock()
     mock_client.with_structured_output.return_value = mock_structured_model
-    
+
     # We will simulate the LLM returning 3 different scores for the 3 docs
     # Side effect function to assign scores sequentially
     scores = [1.0, 9.5, 5.0]
     call_count = {"count": 0}
-    
+
     def side_effect_invoke(*args, **kwargs):
         class MockResponse:
             score = scores[call_count["count"]]
+
         call_count["count"] += 1
         return MockResponse()
-        
+
     mock_structured_model.invoke.side_effect = side_effect_invoke
     mock_chat_service.return_value.client = mock_client
 
