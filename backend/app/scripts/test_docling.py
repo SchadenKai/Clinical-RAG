@@ -26,7 +26,7 @@ with S3FileStager(
     doc = doc_converter(file_path)
     with open(file=DOCLING_DOCUMENT_DEST, mode="w", encoding="utf-8") as f:
         json.dump(doc, f, indent=4, ensure_ascii=False)
-    
+
     md_text = doc.export_to_markdown()
     with open(file=MD_FILE_DEST, mode="w", encoding="utf-8") as f:
         f.write(md_text)
