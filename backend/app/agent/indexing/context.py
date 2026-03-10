@@ -1,4 +1,4 @@
-from langchain_text_splitters import TextSplitter
+from docling_core.transforms.chunker.base import BaseChunker
 from pydantic import BaseModel, ConfigDict
 from pymilvus import MilvusClient
 
@@ -9,7 +9,7 @@ from app.services.llm.tokenizer import TokenizerService
 
 
 class AgentContext(BaseModel):
-    chunker: TextSplitter
+    chunker: BaseChunker
     embedding: EmbeddingService
     s3_service: S3Service
     tokenizer: TokenizerService

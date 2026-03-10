@@ -44,3 +44,15 @@ class SafetyClassifierSOModel(BaseModel):
         ge=0.0,
         le=1.0,
     )
+
+
+class QueryGeneratorSOModel(BaseModel):
+    queries: list[str] = Field(
+        min_length=1,
+        description=(
+            "List of search queries generated from the user's input. "
+            "For simple queries, return a single query. For complex queries, "
+            "return multiple distinct queries covering different aspects. "
+            "Must contain at least 1 query."
+        ),
+    )
