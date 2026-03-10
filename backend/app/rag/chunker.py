@@ -8,7 +8,7 @@ _CHUNKERS_NAME = Literal["hybrid", "hierarchical"]
 
 class ChunkerService:
     def __init__(self):
-        self._chunkers: dict[_CHUNKERS_NAME, type[BaseChunker]] = {
+        self._chunkers: dict[str, type[BaseChunker]] = {
             "hybrid": HybridChunker,
             "hierarchical": HierarchicalChunker,
         }

@@ -94,6 +94,8 @@ class TestIndexingRAGService:
             website_url="https://google.com", request_id="12315aianodwdian"
         )
         assert isinstance(result, dict)
+        # `final_documents` is intentionally absent: ingest_website pops it before
+        # returning so callers never receive raw embedding vectors in the response.
         assert {
             "website_url",
             "raw_document",

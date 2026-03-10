@@ -32,7 +32,7 @@ def web_scrapper(state: AgentState) -> AgentState:
         origin=DocumentOrigin(
             mimetype="text/html",
             filename="web_scraped.html",
-            binary_hash=int(hash_text(page_content)[:16], 16),
+            binary_hash=int(hash_text(page_content)[:16], 16) % (2**63),
             uri=state.website_url,
         ),
     )
@@ -106,7 +106,7 @@ def _source_metadata(website_url: str) -> SourceClass:
     return source_class
 
 
-def _derive_source(chunk: DocChunk, pipeline_metadata: dict) -> str:
+def derive_source(chunk: DocChunk, pipeline_metadata: dict) -> str:
     origin = chunk.meta.origin if chunk.meta else None
     if origin:
         if origin.uri:
@@ -122,6 +122,9 @@ def metadata_builder_node(
     if state.chunked_documents is None:
         app_logger.error("Chunked documents cannot be empty")
         return state
+    if len(state.chunked_documents) == 0:
+        app_logger.warning("Chunked documents list is empty; nothing to process")
+        return state
     if runtime.context.settings is None:
         app_logger.error("Settings cannot be empty")
         return state
@@ -131,12 +134,14 @@ def metadata_builder_node(
     final_chunks = []
     final_metadata = []
 
+    # Hoist use_database outside the loop — it does not change per-chunk
+    runtime.context.db_client.use_database(runtime.context.settings.milvus_db_name)
+
     for i, chunk in enumerate(state.chunked_documents):
         cleaned_text = clean_chunk_content(chunk.text)
 
         content_hash = hash_text(cleaned_text)
 
-        runtime.context.db_client.use_database(runtime.context.settings.milvus_db_name)
         # content_hash is SHA-256 hex — only [0-9a-f] chars, safe for f-string interpolation
         duplicate = runtime.context.db_client.query(
             filter=f"content_hash == '{content_hash}'",
@@ -150,19 +155,19 @@ def metadata_builder_node(
             )
             continue
 
-        source = _derive_source(chunk, pipeline_meta)
+        source = derive_source(chunk, pipeline_meta)
 
         chunk_metadata = {
             **pipeline_meta,
             "source": source,
             "content_hash": content_hash,
+            # Store cleaned text so doc_builder_node can reuse it without re-cleaning
+            "cleaned_text": cleaned_text,
             "chunk_index": len(final_chunks),
             "prev_chunk_id": len(final_chunks) - 1 if len(final_chunks) > 0 else 0,
-            "next_chunk_id": (
-                i + 1
-                if i < len(state.chunked_documents) - 1
-                else len(state.chunked_documents)
-            ),
+            # next_chunk_id uses the deduped position (len(final_chunks) + 1) for
+            # consistency with chunk_index and prev_chunk_id, which are also deduped.
+            "next_chunk_id": len(final_chunks) + 1,
             "last_updated": datetime.datetime.now(tz=timezone).isoformat(),
             "source_class": _source_metadata(website_url=state.website_url).value,
             "headings": (chunk.meta.headings if chunk.meta else []) or [],
@@ -192,17 +197,22 @@ def doc_builder_node(state: AgentState, runtime: Runtime[AgentContext]) -> Agent
         app_logger.error("Tokenizer cannot be empty")
         return state
 
-    text_list = [clean_chunk_content(chunk.text) for chunk in state.chunked_documents]
+    chunk_metadata_list = state.chunk_metadata_list or [
+        {} for _ in state.chunked_documents
+    ]
+
+    # Reuse cleaned_text stored by metadata_builder_node to avoid cleaning twice
+    text_list = [
+        meta.get("cleaned_text", clean_chunk_content(chunk.text))
+        for chunk, meta in zip(state.chunked_documents, chunk_metadata_list)
+    ]
+
     res = embedding.embed_documents(
         text_list, tokenizer, event_name="indexing batch documents"
     )
     vector_list = res.embedding
     res = res.model_dump()
     res.pop("embedding")
-
-    chunk_metadata_list = state.chunk_metadata_list or [
-        {} for _ in state.chunked_documents
-    ]
 
     final_doc_list = []
     for i, (chunk, cleaned_text) in enumerate(zip(state.chunked_documents, text_list)):

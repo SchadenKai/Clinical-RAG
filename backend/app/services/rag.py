@@ -47,7 +47,7 @@ class IndexingService:
             return None
         except Exception as e:
             app_logger.error(
-                f"Something went wrong during uploading of file to file store: {e}"
+                "Something went wrong during uploading of file to file store: %s", e
             )
             return None
 
