@@ -144,7 +144,11 @@ class TestMetadataBuilderNode:
             chunk.meta.headings = ["Heading"]
             return chunk
 
-        chunks = [make_chunk("chunk 0"), make_chunk("chunk 1 dup"), make_chunk("chunk 2")]
+        chunks = [
+            make_chunk("chunk 0"),
+            make_chunk("chunk 1 dup"),
+            make_chunk("chunk 2"),
+        ]
 
         state = AgentState(
             chunked_documents=chunks,

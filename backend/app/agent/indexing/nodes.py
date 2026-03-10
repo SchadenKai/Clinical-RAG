@@ -145,7 +145,8 @@ def metadata_builder_node(
         )
         if duplicate:
             app_logger.warning(
-                "Duplicate found. Removing duplicate chunk no. %d from the list of chunks", i
+                "Duplicate found. Removing duplicate chunk no. %d from the list of chunks",
+                i,
             )
             continue
 
@@ -232,7 +233,9 @@ def indexing_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentSta
         app_logger.error("Collection name cannot be left empty")
         return state
     if state.final_documents is None:
-        app_logger.error("Final documents from the final document builder cannot be empty")
+        app_logger.error(
+            "Final documents from the final document builder cannot be empty"
+        )
         return state
 
     data = list(state.final_documents)
