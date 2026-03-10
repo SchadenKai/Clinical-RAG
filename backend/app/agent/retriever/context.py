@@ -1,5 +1,4 @@
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_text_splitters import TextSplitter
 from pydantic import BaseModel, ConfigDict
 from pymilvus import MilvusClient
 
@@ -10,7 +9,6 @@ from app.services.reranking import RerankerService
 
 
 class AgentContext(BaseModel):
-    chunker: TextSplitter
     embedding: EmbeddingService
     tokenizer: TokenizerService
     db_client: MilvusClient

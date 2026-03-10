@@ -47,7 +47,7 @@ class IndexingService:
             return None
         except Exception as e:
             app_logger.error(
-                f"Something went wrong during uploading of file to file store: {e}"
+                "Something went wrong during uploading of file to file store: %s", e
             )
             return None
 
@@ -71,9 +71,8 @@ class IndexingService:
         init_state = IndexingAgentState(file_key=file_key)
         context = IndexingAgentContext(
             chunker=self.chunker_service.get(
-                chunker_name="recursive",
-                chunk_size=self.settings.chunk_size,
-                chunk_overlap=self.settings.chunk_overlap,
+                chunker_name="hybrid",
+                max_tokens=self.settings.chunk_size,
             ),
             embedding=self.embedding_service,
             tokenizer=self.tokenizer_service,
@@ -106,9 +105,8 @@ class IndexingService:
         init_state = IndexingAgentState(website_url=website_url)
         context = IndexingAgentContext(
             chunker=self.chunker_service.get(
-                chunker_name="recursive",
-                chunk_size=self.settings.chunk_size,
-                chunk_overlap=self.settings.chunk_overlap,
+                chunker_name="hybrid",
+                max_tokens=self.settings.chunk_size,
             ),
             embedding=self.embedding_service,
             tokenizer=self.tokenizer_service,
@@ -136,7 +134,6 @@ class RetrievalService:
     def __init__(
         self,
         retriever_agent: CompiledStateGraph,
-        chunker_service: ChunkerService,
         embedding_service: EmbeddingService,
         vector_db_service: VectorClient,
         tokenizer_service: TokenizerService,
@@ -145,7 +142,6 @@ class RetrievalService:
         reranker_service: RerankerService,
     ):
         self.retriever_agent: CompiledStateGraph = retriever_agent
-        self.chunker_service: ChunkerService = chunker_service
         self.embedding_service: EmbeddingService = embedding_service
         self.vector_db_service: VectorClient = vector_db_service
         self.tokenizer_service: TokenizerService = tokenizer_service
@@ -164,7 +160,6 @@ class RetrievalService:
 
         init_state = InferenceAgentState(input_query=query)
         context = InferenceAgentContext(
-            chunker=self.chunker_service.get("recursive"),
             embedding=self.embedding_service,
             tokenizer=self.tokenizer_service,
             db_client=db_client,

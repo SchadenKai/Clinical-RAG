@@ -32,7 +32,6 @@ def get_retrieval_service(
     tokenizer: Annotated[TokenizerService, Depends(get_tokenizer_service)],
     chat_model_service: Annotated[ChatModelService, Depends(get_chat_model_service)],
     retriever_agent: Annotated[CompiledStateGraph, Depends(get_retriever_agent)],
-    chunker_service: Annotated[ChunkerService, Depends(get_chunker)],
     settings: Annotated[Settings, Depends(get_app_settings)],
     reranker_service: Annotated[RerankerService, Depends(get_reranker_service)],
 ) -> RetrievalService:
@@ -42,14 +41,12 @@ def get_retrieval_service(
         tokenizer_service=tokenizer,
         chat_model_service=chat_model_service,
         retriever_agent=retriever_agent,
-        chunker_service=chunker_service,
         settings=settings,
         reranker_service=reranker_service,
     )
 
 
 def get_retriever_service_manual() -> RetrievalService:
-    chunker_service = get_chunker()
     settings = get_app_settings()
     tokenizer = get_tokenizer_service(settings)
     embedding_service = get_embedding(settings)
@@ -63,7 +60,6 @@ def get_retriever_service_manual() -> RetrievalService:
         tokenizer_service=tokenizer,
         chat_model_service=chat_model_service,
         retriever_agent=retriever_agent,
-        chunker_service=chunker_service,
         settings=settings,
         reranker_service=reranker_service,
     )
