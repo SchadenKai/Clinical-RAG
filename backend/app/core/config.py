@@ -34,7 +34,6 @@ class Settings(BaseSettings):
     vector_dim: int = 3584
     text_field_max_length: int = 2048
     chunk_size: int = 1024
-    chunk_overlap: int = 0
     lowest_score_threshold: float = 0.6
     highest_score_threshold: float = 1.0
 

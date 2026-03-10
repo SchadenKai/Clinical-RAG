@@ -3,11 +3,13 @@ import datetime
 import json
 from zoneinfo import ZoneInfo
 
-from langchain_core.documents import Document
+from docling_core.types.doc.document import DoclingDocument, DocumentOrigin
+from docling_core.types.doc.labels import DocItemLabel
 from langgraph.runtime import Runtime
 
+from app.services.document_converter import doc_converter
 from app.services.file_store.context_manager import S3FileStager
-from app.services.scrapper import doc_converter, structured_output_scrapper
+from app.services.scrapper import structured_output_scrapper
 
 from .context import AgentContext
 from .models import ProgressStatusEnum, SourceClass
@@ -19,19 +21,32 @@ def web_scrapper(state: AgentState) -> AgentState:
     results = asyncio.run(structured_output_scrapper(state.website_url))
     results = json.loads(results.extracted_content)
     results: dict = results[0]
-    doc = Document(
-        page_content=results["page_content"],
-        metadata={
-            "source": state.website_url,
-            "page_title": results["title"],
-            "published_date": results["date"],
-            "source_type": "web",
-        },
+
+    dl_doc = DoclingDocument(
+        name=results.get("title", "web_document"),
+        origin=DocumentOrigin(
+            mimetype="text/html",
+            filename="web_scraped.html",
+            binary_hash=0,
+            uri=state.website_url,
+        ),
     )
+    page_content = results.get("page_content", "")
+    if page_content:
+        dl_doc.add_text(label=DocItemLabel.PARAGRAPH, text=page_content)
+
+    pipeline_metadata = {
+        "source": state.website_url,
+        "page_title": results.get("title"),
+        "source_type": "web",
+        "published_date": results.get("date"),
+    }
     if results.get("tags"):
-        doc.metadata["tags"] = [tag["name"] for tag in results["tags"]]
+        pipeline_metadata["tags"] = [tag["name"] for tag in results["tags"]]
+
     return {
-        "raw_document": [doc],
+        "raw_document": dl_doc,
+        "pipeline_metadata": pipeline_metadata,
         "progress_status": ProgressStatusEnum.LOADING_FILE,
     }
 
@@ -44,16 +59,15 @@ def file_ingestion_node(
     ) as file_path:
         content = doc_converter(file_path)
 
-    doc = Document(
-        page_content=content.export_to_markdown(),
-        metadata={
-            "source": state.file_key,
-            "page_title": content.name,
-            "source_type": "file",
-        },
-    )
+    pipeline_metadata = {
+        "source": state.file_key,
+        "page_title": content.name,
+        "source_type": "file",
+    }
+
     return {
-        "raw_document": [doc],
+        "raw_document": content,
+        "pipeline_metadata": pipeline_metadata,
         "progress_status": ProgressStatusEnum.LOADING_FILE,
     }
 
@@ -62,15 +76,15 @@ def chunker_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentStat
     chunker = runtime.context.chunker
 
     if chunker is None:
-        print("[ERROR] Chunker / Text splitter cannot be left empty")
+        print("[ERROR] Chunker cannot be left empty")
         return state
     if state.raw_document is None:
-        print("[ERROR] Raw string parsed from the file cannot be empty")
+        print("[ERROR] Raw document cannot be empty")
         return state
 
-    docs = chunker.split_documents(state.raw_document)
+    chunks = list(chunker.chunk(state.raw_document))
 
-    return {"chunked_documents": docs, "progress_status": ProgressStatusEnum.CHUNKING}
+    return {"chunked_documents": chunks, "progress_status": ProgressStatusEnum.CHUNKING}
 
 
 def _source_metadata(website_url: str) -> SourceClass:
@@ -87,6 +101,16 @@ def _source_metadata(website_url: str) -> SourceClass:
     return source_class
 
 
+def _derive_source(chunk, pipeline_metadata: dict) -> str:
+    origin = chunk.meta.origin if chunk.meta else None
+    if origin:
+        if origin.uri:
+            return str(origin.uri)
+        if origin.filename:
+            return origin.filename
+    return pipeline_metadata.get("source", "")
+
+
 def metadata_builder_node(
     state: AgentState, runtime: Runtime[AgentContext]
 ) -> AgentState:
@@ -98,17 +122,18 @@ def metadata_builder_node(
         return state
 
     timezone = ZoneInfo(runtime.context.settings.timezone)
-    final_doc_list = []
-    for i, doc in enumerate(state.chunked_documents):
-        cleaned_text = clean_chunk_content(doc.page_content)
-        doc.page_content = cleaned_text
+    pipeline_meta = state.pipeline_metadata or {}
+    final_chunks = []
+    final_metadata = []
+
+    for i, chunk in enumerate(state.chunked_documents):
+        cleaned_text = clean_chunk_content(chunk.text)
 
         content_hash = hash_text(cleaned_text)
-        doc.metadata["content_hash"] = content_hash
 
         runtime.context.db_client.use_database(runtime.context.settings.milvus_db_name)
         duplicate = runtime.context.db_client.query(
-            filter=f"content_hash  == '{doc.metadata['content_hash']}'",
+            filter=f"content_hash  == '{content_hash}'",
             collection_name=runtime.context.settings.milvus_collection_name,
             output_fields=["id"],
         )
@@ -119,19 +144,35 @@ def metadata_builder_node(
             )
             continue
 
-        doc.metadata["chunk_index"] = i
-        doc.metadata["prev_chunk_id"] = i - 1 if i > 0 else 0
-        doc.metadata["next_chunk_id"] = (
-            i + 1 if i < len(state.chunked_documents) else len(state.chunked_documents)
-        )
+        source = _derive_source(chunk, pipeline_meta)
 
-        doc.metadata["last_updated"] = datetime.datetime.now(tz=timezone).isoformat()
-        doc.metadata["source_class"] = _source_metadata(
-            website_url=state.website_url
-        ).value
+        chunk_metadata = {
+            **pipeline_meta,
+            "source": source,
+            "content_hash": content_hash,
+            "chunk_index": i,
+            "prev_chunk_id": i - 1 if i > 0 else 0,
+            "next_chunk_id": (
+                i + 1
+                if i < len(state.chunked_documents)
+                else len(state.chunked_documents)
+            ),
+            "last_updated": datetime.datetime.now(tz=timezone).isoformat(),
+            "source_class": _source_metadata(
+                website_url=state.website_url
+            ).value,
+            "headings": chunk.meta.headings or [],
+        }
 
-        final_doc_list.append(doc)
-    return state.model_copy(update={"chunked_documents": final_doc_list})
+        final_chunks.append(chunk)
+        final_metadata.append(chunk_metadata)
+
+    return state.model_copy(
+        update={
+            "chunked_documents": final_chunks,
+            "chunk_metadata_list": final_metadata,
+        }
+    )
 
 
 def doc_builder_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
@@ -147,7 +188,7 @@ def doc_builder_node(state: AgentState, runtime: Runtime[AgentContext]) -> Agent
         print("[ERROR] Tokenizer cannot be empty")
         return state
 
-    text_list = [doc.page_content for doc in state.chunked_documents]
+    text_list = [clean_chunk_content(chunk.text) for chunk in state.chunked_documents]
     res = embedding.embed_documents(
         text_list, tokenizer, event_name="indexing batch documents"
     )
@@ -155,13 +196,18 @@ def doc_builder_node(state: AgentState, runtime: Runtime[AgentContext]) -> Agent
     res = res.model_dump()
     res.pop("embedding")
 
+    chunk_metadata_list = state.chunk_metadata_list or [
+        {} for _ in state.chunked_documents
+    ]
+
     final_doc_list = []
-    for i, doc in enumerate(state.chunked_documents):
+    for i, chunk in enumerate(state.chunked_documents):
+        meta = chunk_metadata_list[i] if i < len(chunk_metadata_list) else {}
         final_doc = {
-            "text": doc.page_content,
-            "source": doc.metadata["source"],
+            "text": clean_chunk_content(chunk.text),
+            "source": meta.get("source", ""),
             "vector": vector_list[i],
-            **doc.metadata,
+            **meta,
         }
         final_doc_list.append(final_doc)
 

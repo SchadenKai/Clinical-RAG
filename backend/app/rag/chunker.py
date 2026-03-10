@@ -1,27 +1,20 @@
 from typing import Literal
 
-from langchain_text_splitters import (
-    CharacterTextSplitter,
-    MarkdownTextSplitter,
-    RecursiveCharacterTextSplitter,
-    SpacyTextSplitter,
-    TextSplitter,
-)
+from docling.chunking import HierarchicalChunker, HybridChunker
+from docling_core.transforms.chunker.base import BaseChunker
 
-_CHUNKERS_NAME = Literal["semantic", "recursive", "markdown"]
+_CHUNKERS_NAME = Literal["hybrid", "hierarchical"]
 
 
 class ChunkerService:
     def __init__(self):
-        self._chunkers: dict[_CHUNKERS_NAME, TextSplitter] = {
-            "semantic": SpacyTextSplitter,
-            "recursive": RecursiveCharacterTextSplitter,
-            "character_based": CharacterTextSplitter,
-            "markdown": MarkdownTextSplitter,
+        self._chunkers: dict[str, type[BaseChunker]] = {
+            "hybrid": HybridChunker,
+            "hierarchical": HierarchicalChunker,
         }
 
-    def get(self, chunker_name: _CHUNKERS_NAME, **kwargs) -> TextSplitter:
-        chunker = self._chunkers.get(chunker_name)
-        if chunker is None:
-            raise ValueError("Chunker is not available")
-        return chunker(**kwargs)
+    def get(self, chunker_name: _CHUNKERS_NAME, **kwargs) -> BaseChunker:
+        chunker_cls = self._chunkers.get(chunker_name)
+        if chunker_cls is None:
+            raise ValueError(f"Chunker '{chunker_name}' is not available")
+        return chunker_cls(**kwargs)

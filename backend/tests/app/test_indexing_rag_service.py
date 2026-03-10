@@ -1,6 +1,5 @@
 import pytest
-from langchain_core.documents import Document
-from langchain_text_splitters import TextSplitter
+from docling_core.transforms.chunker.base import BaseChunker
 from langgraph.graph.state import CompiledStateGraph
 from pymilvus import MilvusClient
 from pytest_mock import MockerFixture, MockType
@@ -18,11 +17,11 @@ from app.services.rag import IndexingService
 class TestIndexingRAGService:
     @pytest.fixture
     def indexing_service(self, mocker: MockerFixture) -> IndexingService:
-        fake_text_splitter: MockType = mocker.Mock(spec=TextSplitter)
+        fake_chunker: MockType = mocker.Mock(spec=BaseChunker)
         fake_vector_client: MockType = mocker.Mock(spec=MilvusClient)
 
         mk_chunker_service: MockType = mocker.Mock(spec=ChunkerService)
-        mk_chunker_service.get.return_value = fake_text_splitter
+        mk_chunker_service.get.return_value = fake_chunker
         mk_embedding_service: MockType = mocker.Mock(spec=EmbeddingService)
 
         mk_vector_db_service: MockType = mocker.Mock(spec=VectorClient)
@@ -37,26 +36,8 @@ class TestIndexingRAGService:
             {
                 "indexing_node": {
                     "website_url": "https://google.com",
-                    "raw_document": [
-                        Document(
-                            page_content="testing 1",
-                            metadata={"source": "https://google.com"},
-                        ),
-                        Document(
-                            page_content="testing 2",
-                            metadata={"source": "https://google.com"},
-                        ),
-                    ],
-                    "chunked_documents": [
-                        Document(
-                            page_content="testing 1",
-                            metadata={"source": "https://google.com"},
-                        ),
-                        Document(
-                            page_content="testing 2",
-                            metadata={"source": "https://google.com"},
-                        ),
-                    ],
+                    "raw_document": None,
+                    "chunked_documents": None,
                     "final_documents": [
                         RelevantDocs(
                             text="testing 1",
@@ -76,6 +57,12 @@ class TestIndexingRAGService:
                         "duration_ms": 123.00,
                         "event": "test indexing",
                     },
+                    "pipeline_metadata": {
+                        "source": "https://google.com",
+                        "page_title": "Test Page",
+                        "source_type": "web",
+                    },
+                    "chunk_metadata_list": None,
                 },
             }
         ]
@@ -84,7 +71,6 @@ class TestIndexingRAGService:
         mk_settings.milvus_collection_name = "collection_name"
         mk_settings.openai_api_key = "fake_api_key"
         mk_settings.chunk_size = 1021
-        mk_settings.chunk_overlap = 10
         mk_settings.embedding_model = "text-embedding-3-small"
 
         return IndexingService(
@@ -115,6 +101,8 @@ class TestIndexingRAGService:
             "chunked_documents",
             "progress_status",
             "run_metadata",
+            "pipeline_metadata",
+            "chunk_metadata_list",
         } == set(result.keys())
 
     def test_get_chunking_called(self, indexing_service: IndexingService):
@@ -122,5 +110,5 @@ class TestIndexingRAGService:
             website_url="https://google.com", request_id="12315aianodwdian"
         )
         indexing_service.chunker_service.get.assert_called_once_with(
-            chunker_name="recursive", chunk_size=1021, chunk_overlap=10
+            chunker_name="hybrid", max_tokens=1021
         )
