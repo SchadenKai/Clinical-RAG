@@ -134,7 +134,6 @@ class RetrievalService:
     def __init__(
         self,
         retriever_agent: CompiledStateGraph,
-        chunker_service: ChunkerService,
         embedding_service: EmbeddingService,
         vector_db_service: VectorClient,
         tokenizer_service: TokenizerService,
@@ -143,7 +142,6 @@ class RetrievalService:
         reranker_service: RerankerService,
     ):
         self.retriever_agent: CompiledStateGraph = retriever_agent
-        self.chunker_service: ChunkerService = chunker_service
         self.embedding_service: EmbeddingService = embedding_service
         self.vector_db_service: VectorClient = vector_db_service
         self.tokenizer_service: TokenizerService = tokenizer_service
@@ -162,7 +160,6 @@ class RetrievalService:
 
         init_state = InferenceAgentState(input_query=query)
         context = InferenceAgentContext(
-            chunker=self.chunker_service.get("hybrid"),
             embedding=self.embedding_service,
             tokenizer=self.tokenizer_service,
             db_client=db_client,

@@ -4,7 +4,6 @@ from langgraph.graph.state import CompiledStateGraph
 from pymilvus import MilvusClient
 from pytest_mock import MockerFixture, MockType
 
-from app.agent.indexing.models import RelevantDocs
 from app.core.config import Settings
 from app.rag.chunker import ChunkerService
 from app.rag.db import VectorClient
@@ -39,16 +38,16 @@ class TestIndexingRAGService:
                     "raw_document": None,
                     "chunked_documents": None,
                     "final_documents": [
-                        RelevantDocs(
-                            text="testing 1",
-                            vector=[0.123, -0.456, 0.789, 1.0],
-                            source="https://google.com",
-                        ),
-                        RelevantDocs(
-                            text="testing 2",
-                            vector=[0.123, -0.456, 0.789, 1.0],
-                            source="https://google.com",
-                        ),
+                        {
+                            "text": "testing 1",
+                            "vector": [0.123, -0.456, 0.789, 1.0],
+                            "source": "https://google.com",
+                        },
+                        {
+                            "text": "testing 2",
+                            "vector": [0.123, -0.456, 0.789, 1.0],
+                            "source": "https://google.com",
+                        },
                     ],
                     "progress_status": "Done",
                     "run_metadata": {

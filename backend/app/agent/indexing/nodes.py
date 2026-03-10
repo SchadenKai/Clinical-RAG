@@ -3,10 +3,12 @@ import datetime
 import json
 from zoneinfo import ZoneInfo
 
+from docling_core.transforms.chunker.doc_chunk import DocChunk
 from docling_core.types.doc.document import DoclingDocument, DocumentOrigin
 from docling_core.types.doc.labels import DocItemLabel
 from langgraph.runtime import Runtime
 
+from app.logger import app_logger
 from app.services.document_converter import doc_converter
 from app.services.file_store.context_manager import S3FileStager
 from app.services.scrapper import structured_output_scrapper
@@ -22,22 +24,25 @@ def web_scrapper(state: AgentState) -> AgentState:
     results = json.loads(results.extracted_content)
     results: dict = results[0]
 
+    page_content = results.get("page_content", "")
+    title = results.get("title", "web_document")
+
     dl_doc = DoclingDocument(
-        name=results.get("title", "web_document"),
+        name=title,
         origin=DocumentOrigin(
             mimetype="text/html",
             filename="web_scraped.html",
-            binary_hash=0,
+            binary_hash=int(hash_text(page_content)[:16], 16),
             uri=state.website_url,
         ),
     )
-    page_content = results.get("page_content", "")
+    dl_doc.add_heading(text=title, level=1)
     if page_content:
         dl_doc.add_text(label=DocItemLabel.PARAGRAPH, text=page_content)
 
     pipeline_metadata = {
         "source": state.website_url,
-        "page_title": results.get("title"),
+        "page_title": title,
         "source_type": "web",
         "published_date": results.get("date"),
     }
@@ -76,10 +81,10 @@ def chunker_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentStat
     chunker = runtime.context.chunker
 
     if chunker is None:
-        print("[ERROR] Chunker cannot be left empty")
+        app_logger.error("Chunker cannot be left empty")
         return state
     if state.raw_document is None:
-        print("[ERROR] Raw document cannot be empty")
+        app_logger.error("Raw document cannot be empty")
         return state
 
     chunks = list(chunker.chunk(state.raw_document))
@@ -101,7 +106,7 @@ def _source_metadata(website_url: str) -> SourceClass:
     return source_class
 
 
-def _derive_source(chunk, pipeline_metadata: dict) -> str:
+def _derive_source(chunk: DocChunk, pipeline_metadata: dict) -> str:
     origin = chunk.meta.origin if chunk.meta else None
     if origin:
         if origin.uri:
@@ -115,10 +120,10 @@ def metadata_builder_node(
     state: AgentState, runtime: Runtime[AgentContext]
 ) -> AgentState:
     if state.chunked_documents is None:
-        print("[ERROR] Chunked documents cannot be empty")
+        app_logger.error("Chunked documents cannot be empty")
         return state
     if runtime.context.settings is None:
-        print("[ERROR] Settings cannot be empty")
+        app_logger.error("Settings cannot be empty")
         return state
 
     timezone = ZoneInfo(runtime.context.settings.timezone)
@@ -132,15 +137,15 @@ def metadata_builder_node(
         content_hash = hash_text(cleaned_text)
 
         runtime.context.db_client.use_database(runtime.context.settings.milvus_db_name)
+        # content_hash is SHA-256 hex — only [0-9a-f] chars, safe for f-string interpolation
         duplicate = runtime.context.db_client.query(
-            filter=f"content_hash  == '{content_hash}'",
+            filter=f"content_hash == '{content_hash}'",
             collection_name=runtime.context.settings.milvus_collection_name,
             output_fields=["id"],
         )
         if duplicate:
-            print(
-                "[WARNING] Duplicate found. Removing duplicate "
-                f"chunk no. {i} from the list of chunks"
+            app_logger.warning(
+                "Duplicate found. Removing duplicate chunk no. %d from the list of chunks", i
             )
             continue
 
@@ -150,16 +155,16 @@ def metadata_builder_node(
             **pipeline_meta,
             "source": source,
             "content_hash": content_hash,
-            "chunk_index": i,
-            "prev_chunk_id": i - 1 if i > 0 else 0,
+            "chunk_index": len(final_chunks),
+            "prev_chunk_id": len(final_chunks) - 1 if len(final_chunks) > 0 else 0,
             "next_chunk_id": (
                 i + 1
-                if i < len(state.chunked_documents)
+                if i < len(state.chunked_documents) - 1
                 else len(state.chunked_documents)
             ),
             "last_updated": datetime.datetime.now(tz=timezone).isoformat(),
             "source_class": _source_metadata(website_url=state.website_url).value,
-            "headings": chunk.meta.headings or [],
+            "headings": (chunk.meta.headings if chunk.meta else []) or [],
         }
 
         final_chunks.append(chunk)
@@ -177,13 +182,13 @@ def doc_builder_node(state: AgentState, runtime: Runtime[AgentContext]) -> Agent
     embedding = runtime.context.embedding
     tokenizer = runtime.context.tokenizer
     if embedding is None:
-        print("[ERROR] embedding / Embedding model cannot be left empty")
+        app_logger.error("Embedding model cannot be left empty")
         return state
     if state.chunked_documents is None:
-        print("[ERROR] Chunked documents from the chunker cannot be empty")
+        app_logger.error("Chunked documents from the chunker cannot be empty")
         return state
     if tokenizer is None:
-        print("[ERROR] Tokenizer cannot be empty")
+        app_logger.error("Tokenizer cannot be empty")
         return state
 
     text_list = [clean_chunk_content(chunk.text) for chunk in state.chunked_documents]
@@ -199,10 +204,10 @@ def doc_builder_node(state: AgentState, runtime: Runtime[AgentContext]) -> Agent
     ]
 
     final_doc_list = []
-    for i, chunk in enumerate(state.chunked_documents):
+    for i, (chunk, cleaned_text) in enumerate(zip(state.chunked_documents, text_list)):
         meta = chunk_metadata_list[i] if i < len(chunk_metadata_list) else {}
         final_doc = {
-            "text": clean_chunk_content(chunk.text),
+            "text": cleaned_text,
             "source": meta.get("source", ""),
             "vector": vector_list[i],
             **meta,
@@ -221,15 +226,15 @@ def indexing_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentSta
     collection_name = runtime.context.settings.milvus_collection_name
 
     if db_client is None:
-        print("[ERROR] Vector database client cannot be left empty")
+        app_logger.error("Vector database client cannot be left empty")
         return state
     if collection_name is None:
-        print("[ERROR] Collection name cannot be left empty")
+        app_logger.error("Collection name cannot be left empty")
         return state
     if state.final_documents is None:
-        print("[ERROR] Final documents from the final document builder cannot be empty")
+        app_logger.error("Final documents from the final document builder cannot be empty")
         return state
 
-    data = [doc.model_dump() for doc in state.final_documents]
+    data = list(state.final_documents)
     db_client.insert(collection_name=collection_name, data=data)
     return state.model_copy(update={"progress_status": ProgressStatusEnum.DONE})
