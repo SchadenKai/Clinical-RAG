@@ -6,6 +6,7 @@ from pymilvus import MilvusClient
 from app.core.config import Settings
 from app.rag.embeddings import EmbeddingService
 from app.services.llm.tokenizer import TokenizerService
+from app.services.reranking import RerankerService
 
 
 class AgentContext(BaseModel):
@@ -14,6 +15,7 @@ class AgentContext(BaseModel):
     tokenizer: TokenizerService
     db_client: MilvusClient
     chat_model: BaseChatModel
+    reranker: RerankerService
     include_generation: bool = False
     settings: Settings
 

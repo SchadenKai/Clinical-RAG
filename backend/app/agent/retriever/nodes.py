@@ -7,6 +7,8 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.runtime import Runtime
 from pymilvus import AnnSearchRequest, RRFRanker
 
+from app.logger import app_logger
+
 from .context import AgentContext
 from .models import (
     QueryGeneratorSOModel,
@@ -174,7 +176,11 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
         reqs=[dense_req, sparse_req],
         ranker=RRFRanker(k=runtime.context.settings.rrf_k),
         output_fields=["text", "category", "source"],
-        limit=search_limit,
+        limit=runtime.context.settings.reranker_top_k * 3,
+        search_params={
+            "radius": 0.5,  # Lower score threshold
+            "range_filter": 1.0,  # Upper score threshold
+        },
     )
     search_duration_ms = (time.time() - start_time) * 1000
     all_docs = []
@@ -200,6 +206,33 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
                 "search_duration_ms": search_duration_ms,
                 **state.run_metadata,
             },
+        }
+    )
+
+
+def rerank_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
+    if not state.documents:
+        return state
+
+    start_time = time.time()
+    reranked_docs = runtime.context.reranker.rerank(
+        query=state.input_query,
+        documents=state.documents,
+        top_k=runtime.context.settings.reranker_top_k,
+    )
+    rerank_duration_ms = (time.time() - start_time) * 1000
+
+    sources = [doc.get("source") for doc in reranked_docs if "source" in doc]
+
+    # Update run metadata if needed
+    new_metadata = dict(state.run_metadata) if state.run_metadata else {}
+    new_metadata["rerank_duration_ms"] = rerank_duration_ms
+
+    return state.model_copy(
+        update={
+            "documents": reranked_docs,
+            "sources": sources,
+            "run_metadata": new_metadata,
         }
     )
 
@@ -285,11 +318,10 @@ def citation_verification(state: AgentState) -> AgentState:
 def is_citation_correct(
     state: AgentState,
 ) -> Literal["final_report_generation", "__end__"]:
-    print(f"[DEBUG] Checking citation state: {state.is_verified_citations}")
+    app_logger.debug(f"Checking citation state: {state.is_verified_citations}")
     if state.is_verified_citations:
         return "__end__"
-    print(f"[DEBUG] The wrong citations: {state.final_answer}")
-    print(f"[DEBUG] The wrong citations: {state.wrong_citations}")
+    app_logger.debug(f"Wrong citations: {state.wrong_citations}")
     return "final_report_generation"
 
 

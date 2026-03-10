@@ -1,7 +1,5 @@
 from unittest.mock import MagicMock
 
-import pytest
-from pydantic import ValidationError
 from pymilvus import MilvusClient
 
 from app.agent.retriever.context import AgentContext
@@ -18,6 +16,7 @@ def _make_runtime(mocker, *, search_limit=3, rrf_k=60, search_score_threshold=0.
     mk_settings.search_limit = search_limit
     mk_settings.rrf_k = rrf_k
     mk_settings.search_score_threshold = search_score_threshold
+    mk_settings.reranker_top_k = 3
 
     mk_db_client = mocker.Mock(spec=MilvusClient)
 
@@ -56,7 +55,7 @@ class TestSearchNode:
         call_kwargs = mk_db_client.hybrid_search.call_args
 
         assert call_kwargs.kwargs["collection_name"] == "test_collection"
-        assert call_kwargs.kwargs["limit"] == 3
+        assert call_kwargs.kwargs["limit"] == 9  # reranker_top_k (3) * 3
         assert call_kwargs.kwargs["output_fields"] == ["text", "category", "source"]
 
         reqs = call_kwargs.kwargs["reqs"]
