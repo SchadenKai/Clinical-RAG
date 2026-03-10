@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import ValidationError
 from pymilvus import MilvusClient
 
 from app.agent.retriever.context import AgentContext
@@ -184,22 +185,23 @@ def _make_embedding_response(
     return res
 
 
+def _make_queries_runtime(mocker, queries: list[str]):
+    mk_chat_model = mocker.MagicMock()
+    structured_model = mocker.MagicMock()
+    structured_model.invoke.return_value = QueryGeneratorSOModel(queries=queries)
+    mk_chat_model.with_structured_output.return_value = structured_model
+
+    mk_context = mocker.MagicMock()
+    mk_context.chat_model = mk_chat_model
+
+    runtime = mocker.MagicMock()
+    runtime.context = mk_context
+    return runtime
+
+
 class TestGenerateQueriesNode:
-    def _make_runtime(self, mocker, queries: list[str]):
-        mk_chat_model = mocker.MagicMock()
-        structured_model = mocker.MagicMock()
-        structured_model.invoke.return_value = QueryGeneratorSOModel(queries=queries)
-        mk_chat_model.with_structured_output.return_value = structured_model
-
-        mk_context = mocker.MagicMock()
-        mk_context.chat_model = mk_chat_model
-
-        runtime = mocker.MagicMock()
-        runtime.context = mk_context
-        return runtime
-
     def test_generate_queries_simple_query(self, mocker):
-        runtime = self._make_runtime(mocker, queries=["what is malaria"])
+        runtime = _make_queries_runtime(mocker, queries=["what is malaria"])
         state = AgentState(input_query="what is malaria")
 
         new_state = generate_queries(state, runtime)
@@ -212,7 +214,7 @@ class TestGenerateQueriesNode:
             "dengue fever treatment children",
             "comparison malaria dengue treatment guidelines",
         ]
-        runtime = self._make_runtime(mocker, queries=queries)
+        runtime = _make_queries_runtime(mocker, queries=queries)
         state = AgentState(
             input_query="compare treatment protocols for malaria and dengue fever in pediatric patients"
         )
@@ -223,9 +225,35 @@ class TestGenerateQueriesNode:
         assert new_state.generated_queries == queries
 
     def test_generate_queries_missing_input_raises(self, mocker):
-        runtime = self._make_runtime(mocker, queries=["fallback"])
+        runtime = _make_queries_runtime(mocker, queries=["fallback"])
         with pytest.raises((ValueError, TypeError)):
             generate_queries(AgentState(input_query=None), runtime)  # type: ignore[arg-type]
+
+    def test_generate_queries_llm_failure_falls_back_to_input_query(self, mocker):
+        runtime = _make_queries_runtime(mocker, queries=["unused"])
+        structured_model = runtime.context.chat_model.with_structured_output.return_value
+        structured_model.invoke.side_effect = RuntimeError("API error")
+
+        state = AgentState(input_query="fever in children")
+
+        new_state = generate_queries(state, runtime)
+
+        assert new_state.generated_queries == ["fever in children"]
+
+    def test_generate_queries_chat_model_none_raises(self, mocker):
+        runtime = mocker.MagicMock()
+        runtime.context.chat_model = None
+
+        state = AgentState(input_query="malaria treatment")
+
+        with pytest.raises(ValueError):
+            generate_queries(state, runtime)
+
+
+class TestQueryGeneratorSOModel:
+    def test_empty_queries_raises_validation_error(self):
+        with pytest.raises(ValidationError):
+            QueryGeneratorSOModel(queries=[])
 
 
 class TestEmbedQueryNode:
@@ -274,6 +302,24 @@ class TestEmbedQueryNode:
         state = AgentState(
             input_query="fever treatment",
             generated_queries=None,
+        )
+
+        new_state = embed_query(state, runtime)
+
+        mk_embedding.embed_query.assert_called_once()
+        call_args = mk_embedding.embed_query.call_args
+        assert call_args.kwargs["text"] == "fever treatment"
+        assert new_state.embedded_query == [vec]
+
+    def test_embed_query_empty_generated_queries_falls_back_to_input_query(self, mocker):
+        vec = [0.1, 0.2, 0.3]
+        runtime, mk_embedding = self._make_runtime(
+            mocker, embedding_side_effect=[_make_embedding_response(mocker, vec)]
+        )
+
+        state = AgentState(
+            input_query="fever treatment",
+            generated_queries=[],
         )
 
         new_state = embed_query(state, runtime)

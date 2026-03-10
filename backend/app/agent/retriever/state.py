@@ -8,7 +8,7 @@ from .models import SafetyClassifierSOModel
 class AgentState(BaseModel):
     input_query: str
     generated_queries: Optional[list[str]] = None
-    embedded_query: Optional[list[float] | list[list[float]]] = None
+    embedded_query: Optional[list[list[float]]] = None
     final_answer: Optional[str] = None
     documents: Optional[list[dict]] = None
     sources: Optional[list[str]] = None

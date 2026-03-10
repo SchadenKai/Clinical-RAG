@@ -103,8 +103,11 @@ def generate_queries(state: AgentState, runtime: Runtime[AgentContext]) -> Agent
     chat_model = runtime.context.chat_model.with_structured_output(
         schema=QueryGeneratorSOModel
     )
-    response: QueryGeneratorSOModel = chat_model.invoke(messages)
-    return state.model_copy(update={"generated_queries": response.queries})
+    try:
+        response: QueryGeneratorSOModel = chat_model.invoke(messages)
+        return state.model_copy(update={"generated_queries": response.queries})
+    except Exception:
+        return state.model_copy(update={"generated_queries": [state.input_query]})
 
 
 def embed_query(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
