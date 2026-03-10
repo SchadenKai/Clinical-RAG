@@ -119,9 +119,7 @@ class TestFileIngestionNode:
         mock_stager = mocker.MagicMock()
         mock_stager.__enter__ = mocker.Mock(return_value=fake_path)
         mock_stager.__exit__ = mocker.Mock(return_value=False)
-        mocker.patch(
-            "app.agent.indexing.nodes.S3FileStager", return_value=mock_stager
-        )
+        mocker.patch("app.agent.indexing.nodes.S3FileStager", return_value=mock_stager)
 
         state = AgentState(file_key="uploads/test.pdf")
         result = file_ingestion_node(state, runtime)
@@ -336,9 +334,7 @@ class TestDocBuilderNode:
 
 
 class TestIndexingNode:
-    def test_indexing_node_inserts_documents_and_sets_done(
-        self, mocker: MockerFixture
-    ):
+    def test_indexing_node_inserts_documents_and_sets_done(self, mocker: MockerFixture):
         runtime, mk_db_client = _make_runtime(mocker)
 
         docs = [
