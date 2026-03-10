@@ -231,7 +231,9 @@ class TestGenerateQueriesNode:
 
     def test_generate_queries_llm_failure_falls_back_to_input_query(self, mocker):
         runtime = _make_queries_runtime(mocker, queries=["unused"])
-        structured_model = runtime.context.chat_model.with_structured_output.return_value
+        structured_model = (
+            runtime.context.chat_model.with_structured_output.return_value
+        )
         structured_model.invoke.side_effect = RuntimeError("API error")
 
         state = AgentState(input_query="fever in children")
@@ -311,7 +313,9 @@ class TestEmbedQueryNode:
         assert call_args.kwargs["text"] == "fever treatment"
         assert new_state.embedded_query == [vec]
 
-    def test_embed_query_empty_generated_queries_falls_back_to_input_query(self, mocker):
+    def test_embed_query_empty_generated_queries_falls_back_to_input_query(
+        self, mocker
+    ):
         vec = [0.1, 0.2, 0.3]
         runtime, mk_embedding = self._make_runtime(
             mocker, embedding_side_effect=[_make_embedding_response(mocker, vec)]
