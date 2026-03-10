@@ -158,9 +158,7 @@ def metadata_builder_node(
                 else len(state.chunked_documents)
             ),
             "last_updated": datetime.datetime.now(tz=timezone).isoformat(),
-            "source_class": _source_metadata(
-                website_url=state.website_url
-            ).value,
+            "source_class": _source_metadata(website_url=state.website_url).value,
             "headings": chunk.meta.headings or [],
         }
 
