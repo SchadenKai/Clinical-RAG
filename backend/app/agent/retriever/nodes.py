@@ -1,3 +1,4 @@
+import logging
 import re
 import time
 from typing import Literal
@@ -26,6 +27,7 @@ from .prompts import (
 from .state import AgentState
 
 _SAFETY_CLASSIFICATION_THRESHOLD = 0.3
+logger = logging.getLogger(__name__)
 
 
 def safety_classifier_node(
@@ -34,8 +36,6 @@ def safety_classifier_node(
     """
     Classifies the user's query in terms of the SafetyClassfication
     """
-    if state.input_query is None:
-        raise ValueError("Missing user input query")
     if runtime.context.chat_model is None:
         raise ValueError("Missing vector database client")
 
@@ -65,8 +65,6 @@ def is_query_safe(state: AgentState) -> Literal["generate_queries", "refusal_nod
 
 
 def refusal_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
-    if state.input_query is None:
-        raise ValueError("Missing user input query")
     if state.safety_classification.supporting_args is None:
         raise ValueError("Supporting arguments cannot be empty")
     if runtime.context.chat_model is None:
@@ -87,8 +85,6 @@ def refusal_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentStat
 
 
 def generate_queries(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
-    if state.input_query is None:
-        raise ValueError("Input query cannot be empty")
     if runtime.context.chat_model is None:
         raise ValueError("Missing chat model")
 
@@ -106,7 +102,8 @@ def generate_queries(state: AgentState, runtime: Runtime[AgentContext]) -> Agent
     try:
         response: QueryGeneratorSOModel = chat_model.invoke(messages)
         return state.model_copy(update={"generated_queries": response.queries})
-    except Exception:
+    except Exception as e:
+        logger.warning("Query generation failed, falling back to original query: %s", e)
         return state.model_copy(update={"generated_queries": [state.input_query]})
 
 
@@ -180,11 +177,18 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
         limit=search_limit,
     )
     search_duration_ms = (time.time() - start_time) * 1000
-    res = res[0]
-    res = [{**doc.entity, "score": doc.distance, "id": doc.id} for doc in res]
+    all_docs = []
+    for group in res:
+        all_docs.extend(
+            [{**doc.entity, "score": doc.distance, "id": doc.id} for doc in group]
+        )
+    seen_ids: dict = {}
+    for doc in all_docs:
+        if doc["id"] not in seen_ids or doc["score"] > seen_ids[doc["id"]]["score"]:
+            seen_ids[doc["id"]] = doc
     res = [
         doc
-        for doc in res
+        for doc in seen_ids.values()
         if doc["score"] >= runtime.context.settings.search_score_threshold
     ]
     sources = [doc["source"] for doc in res]
@@ -267,7 +271,7 @@ def citation_verification(state: AgentState) -> AgentState:
         return state.model_copy(
             update={
                 "is_verified_citations": is_verified_citation,
-                "wrong_citations": [""],
+                "wrong_citations": [],
             }
         )
     return state.model_copy(

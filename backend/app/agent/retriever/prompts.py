@@ -146,5 +146,6 @@ to maximize document recall from the vector database.
 - Queries should be concise and optimized for semantic similarity search.
 """
 
-QUERY_GENERATOR_HUMAN_MESSAGE_TEMPLATE = """User query: {user_query}
+QUERY_GENERATOR_HUMAN_MESSAGE_TEMPLATE = """
+User query: {user_query}
 """

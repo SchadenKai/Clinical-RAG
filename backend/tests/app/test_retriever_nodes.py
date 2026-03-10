@@ -173,6 +173,50 @@ class TestSearchNode:
         assert new_state.documents[0]["score"] == 0.05
         assert new_state.sources == ["https://cdc.gov/1"]
 
+    def test_search_multi_query_merges_and_deduplicates_result_groups(self, mocker):
+        runtime, mk_db_client = _make_runtime(mocker, search_score_threshold=0.01)
+
+        hit1 = _make_hit("doc1 text", "https://cdc.gov/1", "fever", 0.05, 101)
+        hit2 = _make_hit("doc2 text", "https://who.int/2", "malaria", 0.04, 102)
+        hit3_low = _make_hit("doc3 text", "https://cdc.gov/3", "dengue", 0.03, 103)
+        hit3_high = _make_hit("doc3 text", "https://cdc.gov/3", "dengue", 0.07, 103)
+        mk_db_client.hybrid_search.return_value = [[hit1, hit3_low], [hit2, hit3_high]]
+
+        state = AgentState(
+            input_query="malaria and dengue prevention",
+            generated_queries=["malaria prevention", "dengue prevention"],
+            embedded_query=[[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]],
+            run_metadata={},
+        )
+
+        new_state = search(state, runtime)
+
+        assert len(new_state.documents) == 3
+        result_ids = {doc["id"] for doc in new_state.documents}
+        assert result_ids == {101, 102, 103}
+        doc103 = next(doc for doc in new_state.documents if doc["id"] == 103)
+        assert doc103["score"] == 0.07
+
+    def test_search_multi_query_empty_group_still_returns_other_group_results(
+        self, mocker
+    ):
+        runtime, mk_db_client = _make_runtime(mocker, search_score_threshold=0.01)
+
+        hit1 = _make_hit("doc1 text", "https://cdc.gov/1", "fever", 0.05, 101)
+        mk_db_client.hybrid_search.return_value = [[], [hit1]]
+
+        state = AgentState(
+            input_query="malaria prevention",
+            generated_queries=["malaria prevention", "malaria prophylaxis"],
+            embedded_query=[[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]],
+            run_metadata={},
+        )
+
+        new_state = search(state, runtime)
+
+        assert len(new_state.documents) == 1
+        assert new_state.documents[0]["id"] == 101
+
 
 def _make_embedding_response(
     mocker, embedding, token_count=10, total_cost=0.001, duration_ms=50.0
@@ -226,7 +270,7 @@ class TestGenerateQueriesNode:
 
     def test_generate_queries_missing_input_raises(self, mocker):
         runtime = _make_queries_runtime(mocker, queries=["fallback"])
-        with pytest.raises((ValueError, TypeError)):
+        with pytest.raises(ValidationError):
             generate_queries(AgentState(input_query=None), runtime)  # type: ignore[arg-type]
 
     def test_generate_queries_llm_failure_falls_back_to_input_query(self, mocker):
@@ -250,6 +294,24 @@ class TestGenerateQueriesNode:
 
         with pytest.raises(ValueError):
             generate_queries(state, runtime)
+
+    def test_generate_queries_empty_queries_list_falls_back_to_input_query(
+        self, mocker
+    ):
+        # QueryGeneratorSOModel(queries=[]) raises ValidationError (min_length=1).
+        # The except block catches this and falls back to returning the original input_query.
+        def _raise_validation_error(*args, **kwargs):
+            QueryGeneratorSOModel(queries=[])
+
+        runtime = _make_queries_runtime(mocker, queries=["unused"])
+        structured_model = runtime.context.chat_model.with_structured_output.return_value
+        structured_model.invoke.side_effect = _raise_validation_error
+
+        state = AgentState(input_query="fever in children")
+
+        new_state = generate_queries(state, runtime)
+
+        assert new_state.generated_queries == ["fever in children"]
 
 
 class TestQueryGeneratorSOModel:
