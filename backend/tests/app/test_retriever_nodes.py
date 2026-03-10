@@ -304,7 +304,9 @@ class TestGenerateQueriesNode:
             QueryGeneratorSOModel(queries=[])
 
         runtime = _make_queries_runtime(mocker, queries=["unused"])
-        structured_model = runtime.context.chat_model.with_structured_output.return_value
+        structured_model = (
+            runtime.context.chat_model.with_structured_output.return_value
+        )
         structured_model.invoke.side_effect = _raise_validation_error
 
         state = AgentState(input_query="fever in children")
