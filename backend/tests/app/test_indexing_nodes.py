@@ -1,5 +1,5 @@
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 from docling_core.transforms.chunker.doc_chunk import DocChunk
@@ -41,7 +41,8 @@ def _make_runtime(
     mk_context: MockType = mocker.Mock(spec=AgentContext)
     mk_context.settings = mk_settings
     mk_context.db_client = mk_db_client
-    # Explicitly set optional attributes so spec-enforced mocks don't raise AttributeError
+    # Explicitly set optional attributes
+    # so spec-enforced mocks don't raise AttributeError
     mk_context.chunker = mocker.MagicMock()
     mk_context.embedding = mocker.MagicMock()
     mk_context.tokenizer = mocker.MagicMock()

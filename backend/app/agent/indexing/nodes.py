@@ -142,7 +142,7 @@ def metadata_builder_node(
 
         content_hash = hash_text(cleaned_text)
 
-        # content_hash is SHA-256 hex — only [0-9a-f] chars, safe for f-string interpolation
+        # content_hash is SHA-256 hex (only [0-9a-f] chars)
         duplicate = runtime.context.db_client.query(
             filter=f"content_hash == '{content_hash}'",
             collection_name=runtime.context.settings.milvus_collection_name,
@@ -150,7 +150,7 @@ def metadata_builder_node(
         )
         if duplicate:
             app_logger.warning(
-                "Duplicate found. Removing duplicate chunk no. %d from the list of chunks",
+                "Duplicate found. Removing duplicate chunk %d",
                 i,
             )
             continue
@@ -204,7 +204,11 @@ def doc_builder_node(state: AgentState, runtime: Runtime[AgentContext]) -> Agent
     # Reuse cleaned_text stored by metadata_builder_node to avoid cleaning twice
     text_list = [
         meta.get("cleaned_text", clean_chunk_content(chunk.text))
-        for chunk, meta in zip(state.chunked_documents, chunk_metadata_list)
+        for chunk, meta in zip(
+            state.chunked_documents,
+            chunk_metadata_list,
+            strict=True,
+        )
     ]
 
     res = embedding.embed_documents(
@@ -215,7 +219,9 @@ def doc_builder_node(state: AgentState, runtime: Runtime[AgentContext]) -> Agent
     res.pop("embedding")
 
     final_doc_list = []
-    for i, (chunk, cleaned_text) in enumerate(zip(state.chunked_documents, text_list)):
+    for i, (_chunk, cleaned_text) in enumerate(
+        zip(state.chunked_documents, text_list, strict=True)
+    ):
         meta = chunk_metadata_list[i] if i < len(chunk_metadata_list) else {}
         final_doc = {
             "text": cleaned_text,
