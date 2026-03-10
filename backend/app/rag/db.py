@@ -1,10 +1,10 @@
 from pymilvus import (
+    AnnSearchRequest,
     DataType,
-    IndexType,
-    MilvusClient,
     Function,
     FunctionType,
-    AnnSearchRequest,
+    IndexType,
+    MilvusClient,
     RRFRanker,
 )
 

@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from pydantic import ValidationError
@@ -259,9 +259,11 @@ class TestGenerateQueriesNode:
             "comparison malaria dengue treatment guidelines",
         ]
         runtime = _make_queries_runtime(mocker, queries=queries)
-        state = AgentState(
-            input_query="compare treatment protocols for malaria and dengue fever in pediatric patients"
+        long_query = (
+            "compare treatment protocols for malaria and dengue fever"
+            " in pediatric patients"
         )
+        state = AgentState(input_query=long_query)
 
         new_state = generate_queries(state, runtime)
 
@@ -299,7 +301,8 @@ class TestGenerateQueriesNode:
         self, mocker
     ):
         # QueryGeneratorSOModel(queries=[]) raises ValidationError (min_length=1).
-        # The except block catches this and falls back to returning the original input_query.
+        # The except block catches this and falls back to returning the original
+        # input_query.
         def _raise_validation_error(*args, **kwargs):
             QueryGeneratorSOModel(queries=[])
 
