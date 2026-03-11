@@ -63,9 +63,9 @@ def file_ingestion_node(
         runtime.context.s3_service, state.file_key, runtime.context.settings
     ) as file_path:
         content = doc_converter(
-                file_path,
-                page_batch_size=runtime.context.settings.pdf_batch_size,
-            )
+            file_path,
+            page_batch_size=runtime.context.settings.pdf_batch_size,
+        )
 
     pipeline_metadata = {
         "source": state.file_key,
