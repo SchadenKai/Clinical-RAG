@@ -89,7 +89,6 @@ class LLMJudgeState(BaseModel):
     all_documents: Optional[list[dict]] = Field(
         default=None,
         description=(
-            "Accumulated retrieved documents across all "
-            "judge iterations (deduplicated)"
+            "Accumulated retrieved documents across all judge iterations (deduplicated)"
         ),
     )
