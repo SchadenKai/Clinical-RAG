@@ -34,6 +34,7 @@ def _make_runtime(
     mk_settings.milvus_db_name = milvus_db_name
     mk_settings.milvus_collection_name = milvus_collection_name
     mk_settings.timezone = timezone
+    mk_settings.pdf_batch_size = 10
 
     mk_db_client: MockType = mocker.Mock(spec=MilvusClient)
     mk_db_client.query.return_value = []  # no duplicates by default
@@ -126,7 +127,7 @@ class TestFileIngestionNode:
         state = AgentState(file_key="uploads/test.pdf")
         result = file_ingestion_node(state, runtime)
 
-        mock_converter.assert_called_once_with(fake_path)
+        mock_converter.assert_called_once_with(fake_path, page_batch_size=10)
         assert result["raw_document"] is fake_doc
         assert result["pipeline_metadata"]["source"] == "uploads/test.pdf"
         assert result["pipeline_metadata"]["source_type"] == "file"

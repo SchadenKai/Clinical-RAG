@@ -326,7 +326,7 @@ def citation_verification(state: AgentState) -> AgentState:
         wrong_citations.append("FORMAT_ERROR: Found invalid brackets 【 】")
         is_verified_citation = False
 
-    citation_pattern = r"\[([^\]]+)\]\(([^)]+)\)"
+    citation_pattern = r"\[(\d+)\]\(([^)]+)\)"
     citation_list: list[str, str] = re.findall(citation_pattern, state.final_answer)
 
     for citation in citation_list:
