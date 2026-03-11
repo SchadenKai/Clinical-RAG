@@ -149,3 +149,38 @@ to maximize document recall from the vector database.
 QUERY_GENERATOR_HUMAN_MESSAGE_TEMPLATE = """
 User query: {user_query}
 """
+
+QUERY_GENERATOR_HUMAN_MESSAGE_TEMPLATE_WITH_FEEDBACK = """
+User query: {user_query}
+
+The previous retrieval was insufficient. Evaluator feedback:
+{judge_feedback}
+
+Generate refined search queries to retrieve the missing information.
+"""
+
+JUDGE_FEEDBACK_PROMPT = """
+## EVALUATOR FEEDBACK
+Your previous answer was evaluated and found insufficient. Address the following:
+
+Feedback: {judge_feedback}
+
+Previous answer:
+{previous_answer}
+
+Improve your answer based on this feedback using the available documents.
+"""
+
+JUDGE_CONTEXT_SUFFICIENCY_CRITERIA = (
+    "Evaluate whether the retrieval context contains sufficient information "
+    "to comprehensively answer the user's query. Score 1.0 if all aspects "
+    "of the query are addressable from the context, 0.0 if critical "
+    "information is missing."
+)
+
+JUDGE_ANSWER_QUALITY_CRITERIA = (
+    "Evaluate whether the actual output faithfully and completely synthesizes "
+    "the retrieval context to answer the input query. Score 1.0 if the answer "
+    "is accurate, complete, and well-grounded in the context. Score 0.0 if "
+    "it is inaccurate, incomplete, or hallucinates information not in context."
+)
