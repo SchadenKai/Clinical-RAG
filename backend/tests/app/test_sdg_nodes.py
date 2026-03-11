@@ -209,9 +209,7 @@ class TestTestsetGenerationNode:
         mock_generator = mocker.MagicMock()
         mock_generator.generate.return_value = mock_testset
 
-        mocker.patch(
-            "ragas.testset.TestsetGenerator", return_value=mock_generator
-        )
+        mocker.patch("ragas.testset.TestsetGenerator", return_value=mock_generator)
 
         state = AgentState.model_construct(
             file_key="uploads/doc.pdf",
@@ -232,9 +230,7 @@ class TestTestsetGenerationNode:
         mock_generator = mocker.MagicMock()
         mock_generator.generate.side_effect = RuntimeError("generation failed")
 
-        mocker.patch(
-            "ragas.testset.TestsetGenerator", return_value=mock_generator
-        )
+        mocker.patch("ragas.testset.TestsetGenerator", return_value=mock_generator)
 
         state = AgentState.model_construct(
             file_key="uploads/doc.pdf",
