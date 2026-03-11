@@ -223,7 +223,10 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
     # Consolidate new docs with accumulated docs from previous judge iterations
     accumulated = {
         doc["id"]: doc
-        for doc in ((state.llm_judge_state.all_documents if state.llm_judge_state else None) or [])
+        for doc in (
+            (state.llm_judge_state.all_documents if state.llm_judge_state else None)
+            or []
+        )
     }
     for doc in res:
         doc_id = doc.get("id")
@@ -289,7 +292,9 @@ def final_report_generation(
             wrong_citations=state.wrong_citations
         )
     elif (
-        state.llm_judge_state and state.llm_judge_state.feedback and state.llm_judge_state.iterations > 0
+        state.llm_judge_state
+        and state.llm_judge_state.feedback
+        and state.llm_judge_state.iterations > 0
     ):
         system_prompt += JUDGE_FEEDBACK_PROMPT.format(
             judge_feedback=state.llm_judge_state.feedback,
