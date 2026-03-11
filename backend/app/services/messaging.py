@@ -70,9 +70,7 @@ class SendMessageService:
         thread_id = request_id
         run_id = str(uuid.uuid4())
 
-        yield encoder.encode(
-            RunStartedEvent(thread_id=thread_id, run_id=run_id)
-        )
+        yield encoder.encode(RunStartedEvent(thread_id=thread_id, run_id=run_id))
 
         try:
             if agent_type == AgentType.CLINICAL_GUIDELINE:
@@ -97,9 +95,7 @@ class SendMessageService:
                 )
                 return
 
-            yield encoder.encode(
-                RunFinishedEvent(thread_id=thread_id, run_id=run_id)
-            )
+            yield encoder.encode(RunFinishedEvent(thread_id=thread_id, run_id=run_id))
         except Exception as e:
             app_logger.error("Error in stream_message: %s", e, exc_info=True)
             yield encoder.encode(RunErrorEvent(message=str(e)))
@@ -152,9 +148,7 @@ class SendMessageService:
 
                     accumulated_state.update(state_update)
 
-                    yield encoder.encode(
-                        StateSnapshotEvent(snapshot=accumulated_state)
-                    )
+                    yield encoder.encode(StateSnapshotEvent(snapshot=accumulated_state))
                     yield encoder.encode(StepFinishedEvent(step_name=node_name))
 
             elif mode == "messages":
@@ -165,9 +159,7 @@ class SendMessageService:
                     and metadata.get("langgraph_node") == "final_report_generation"
                 ):
                     content = (
-                        ai_chunk.content
-                        if isinstance(ai_chunk.content, str)
-                        else ""
+                        ai_chunk.content if isinstance(ai_chunk.content, str) else ""
                     )
                     if content:
                         if not is_streaming_text:
@@ -190,9 +182,7 @@ class SendMessageService:
         # Emit final state snapshot with the complete response data
         # structured to match /rag/retrieve output format
         final_snapshot = self._build_retriever_response(accumulated_state)
-        yield encoder.encode(
-            CustomEvent(name="final_response", value=final_snapshot)
-        )
+        yield encoder.encode(CustomEvent(name="final_response", value=final_snapshot))
 
     def _stream_react_agent(
         self,
@@ -234,9 +224,7 @@ class SendMessageService:
                     and metadata.get("langgraph_node") == "call_llm_node"
                 ):
                     content = (
-                        ai_chunk.content
-                        if isinstance(ai_chunk.content, str)
-                        else ""
+                        ai_chunk.content if isinstance(ai_chunk.content, str) else ""
                     )
                     if content:
                         if not is_streaming_text:
