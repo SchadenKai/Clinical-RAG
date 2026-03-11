@@ -18,9 +18,7 @@ from .models import SdgProgressEnum
 from .state import AgentState
 
 
-def file_ingestion_node(
-    state: AgentState, runtime: Runtime[AgentContext]
-) -> dict:
+def file_ingestion_node(state: AgentState, runtime: Runtime[AgentContext]) -> dict:
     app_logger.info("SDG: ingesting file %s", state.file_key)
     with S3FileStager(
         runtime.context.s3_service,
@@ -56,15 +54,15 @@ def document_preparation_node(
     }
 
 
-def knowledge_graph_node(
-    state: AgentState, runtime: Runtime[AgentContext]
-) -> dict:
+def knowledge_graph_node(state: AgentState, runtime: Runtime[AgentContext]) -> dict:
     app_logger.info(
         "SDG: building knowledge graph from %d document(s)",
         len(state.langchain_documents),
     )
     ragas_llm = LangchainLLMWrapper(runtime.context.llm_service.client)
-    ragas_embeddings = LangchainEmbeddingsWrapper(runtime.context.embedding_service.client)
+    ragas_embeddings = LangchainEmbeddingsWrapper(
+        runtime.context.embedding_service.client
+    )
 
     nodes = [
         Node(
@@ -103,14 +101,14 @@ def knowledge_graph_node(
     }
 
 
-def testset_generation_node(
-    state: AgentState, runtime: Runtime[AgentContext]
-) -> dict:
+def testset_generation_node(state: AgentState, runtime: Runtime[AgentContext]) -> dict:
     from ragas.testset import TestsetGenerator
 
     app_logger.info("SDG: generating testset of size %d", state.testset_size)
     ragas_llm = LangchainLLMWrapper(runtime.context.llm_service.client)
-    ragas_embeddings = LangchainEmbeddingsWrapper(runtime.context.embedding_service.client)
+    ragas_embeddings = LangchainEmbeddingsWrapper(
+        runtime.context.embedding_service.client
+    )
 
     generator = TestsetGenerator(
         llm=ragas_llm,
@@ -132,9 +130,7 @@ def testset_generation_node(
     }
 
 
-def store_goldens_node(
-    state: AgentState, runtime: Runtime[AgentContext]
-) -> dict:
+def store_goldens_node(state: AgentState, runtime: Runtime[AgentContext]) -> dict:
     if not state.goldens:
         app_logger.warning("SDG: no goldens to store")
         return {"progress_status": SdgProgressEnum.DONE}
