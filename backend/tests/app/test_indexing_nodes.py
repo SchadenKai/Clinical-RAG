@@ -1,3 +1,4 @@
+import datetime
 import json
 from unittest.mock import AsyncMock
 
@@ -35,6 +36,11 @@ def _make_runtime(
     mk_settings.milvus_collection_name = milvus_collection_name
     mk_settings.timezone = timezone
     mk_settings.pdf_batch_size = 10
+
+    mocker.patch(
+        "app.agent.indexing.nodes.ZoneInfo",
+        return_value=datetime.timezone.utc,
+    )
 
     mk_db_client: MockType = mocker.Mock(spec=MilvusClient)
     mk_db_client.query.return_value = []  # no duplicates by default

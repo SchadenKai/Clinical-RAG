@@ -98,11 +98,15 @@ target-version= "py311"
 select = ["E", "F", "I", "B"]
 ignore = []
 
+[tool.ruff.lint.per-file-ignores]
+"notebook/*.ipynb" = ["E501", "F401", "F821", "I001"]
+
 [tool.pytest.ini_options]
 pythonpath = "."
 minversion = "6.0"
 addopts = "-ra -v"
 asyncio_mode = "auto"
+python_functions = ["test_*"]
 testpaths = [
     "tests",
 ]
