@@ -149,3 +149,24 @@ to maximize document recall from the vector database.
 QUERY_GENERATOR_HUMAN_MESSAGE_TEMPLATE = """
 User query: {user_query}
 """
+
+QUERY_GENERATOR_HUMAN_MESSAGE_TEMPLATE_WITH_FEEDBACK = """
+User query: {user_query}
+
+The previous retrieval was insufficient. Evaluator feedback:
+{judge_feedback}
+
+Generate refined search queries to retrieve the missing information.
+"""
+
+JUDGE_FEEDBACK_PROMPT = """
+## EVALUATOR FEEDBACK
+Your previous answer was evaluated and found insufficient. Address the following:
+
+Feedback: {judge_feedback}
+
+Previous answer:
+{previous_answer}
+
+Improve your answer based on this feedback using the available documents.
+"""

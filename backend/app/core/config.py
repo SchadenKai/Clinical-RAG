@@ -50,6 +50,11 @@ class Settings(BaseSettings):
 
     rag_metrics_threshold: float = 0.7
 
+    # llm judge config
+    judge_score_threshold: float = float(os.environ.get("JUDGE_SCORE_THRESHOLD", "0.7"))
+    judge_max_iterations: int = int(os.environ.get("JUDGE_MAX_ITERATIONS", "3"))
+    llm_base_url: str = os.environ.get("LLM_BASE_URL", "")
+
     # reranker config
     reranker_provider: str = os.environ.get("RERANKER_PROVIDER", "slm")
     reranker_model: str = os.environ.get(

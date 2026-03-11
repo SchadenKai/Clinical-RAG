@@ -1,5 +1,5 @@
 import enum
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -55,4 +55,35 @@ class QueryGeneratorSOModel(BaseModel):
             "return multiple distinct queries covering different aspects. "
             "Must contain at least 1 query."
         ),
+    )
+
+
+class LLMJudgeState(BaseModel):
+    """Composite state container for all LLM-as-a-Judge related fields."""
+
+    score: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Overall quality score from 0.0 to 1.0 (minimum of context and answer scores)",
+    )
+    address_back: Optional[Literal["query_generation", "synthesizer"]] = Field(
+        default=None,
+        description=(
+            "Routing target when quality is insufficient: "
+            "'query_generation' if retrieved context is lacking, "
+            "'synthesizer' if synthesis quality is poor"
+        ),
+    )
+    feedback: Optional[str] = Field(
+        default=None,
+        description="GEval reason explaining the score and guiding the next iteration",
+    )
+    iterations: int = Field(
+        default=0,
+        description="Number of judge evaluation iterations completed",
+    )
+    all_documents: Optional[list[dict]] = Field(
+        default=None,
+        description="Accumulated retrieved documents across all judge iterations (deduplicated)",
     )
