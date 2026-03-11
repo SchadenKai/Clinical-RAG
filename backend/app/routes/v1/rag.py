@@ -9,10 +9,12 @@ from pydantic import BaseModel
 from app.routes.dependencies.data_generator import get_synthetic_data_generator
 from app.routes.dependencies.evaluator import get_evaluation_pipeline
 from app.routes.dependencies.rag import get_indexing_service, get_retrieval_service
+from app.routes.dependencies.sdg import get_sdg_service
 from app.services.evaluation.dataset import SyntheticDataGenerator
 from app.services.evaluation.evaluator import EvaluationPipeline
 from app.services.rag import IndexingService, RetrievalService
 from app.services.scrapper import who_pdf_url_list
+from app.services.sdg import SDGService
 from app.utils import get_request_id
 
 rag_router = APIRouter(prefix="/rag", tags=["rag"])
@@ -104,6 +106,24 @@ def generate_golden_dataset(
     ],
 ):
     return synthetic_data_generator.generate()
+
+
+class RagasGoldenRequestBody(BaseModel):
+    file_key: str
+    testset_size: int = 10
+
+
+@rag_router.post("/generate/golden/ragas")
+def generate_ragas_golden_dataset(
+    request: RagasGoldenRequestBody,
+    sdg_service: Annotated[SDGService, Depends(get_sdg_service)],
+    request_id: Annotated[str, Depends(get_request_id)],
+):
+    return sdg_service.generate(
+        file_key=request.file_key,
+        testset_size=request.testset_size,
+        request_id=request_id,
+    )
 
 
 @rag_router.post("/test/playwright")
