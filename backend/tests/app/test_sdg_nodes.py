@@ -210,7 +210,7 @@ class TestTestsetGenerationNode:
         mock_generator.generate.return_value = mock_testset
 
         mocker.patch(
-            "app.agent.sdg.nodes.TestsetGenerator", return_value=mock_generator
+            "ragas.testset.TestsetGenerator", return_value=mock_generator
         )
 
         state = AgentState.model_construct(
@@ -233,7 +233,7 @@ class TestTestsetGenerationNode:
         mock_generator.generate.side_effect = RuntimeError("generation failed")
 
         mocker.patch(
-            "app.agent.sdg.nodes.TestsetGenerator", return_value=mock_generator
+            "ragas.testset.TestsetGenerator", return_value=mock_generator
         )
 
         state = AgentState.model_construct(
