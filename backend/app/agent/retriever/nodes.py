@@ -175,7 +175,14 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
         collection_name=runtime.context.settings.milvus_collection_name,
         reqs=[dense_req, sparse_req],
         ranker=RRFRanker(k=runtime.context.settings.rrf_k),
-        output_fields=["text", "category", "source"],
+        output_fields=[
+            "text",
+            "source",
+            "source_class",
+            "page_title",
+            "chunk_index",
+            "headings",
+        ],
         limit=runtime.context.settings.reranker_top_k * 3,
         search_params={
             "radius": 0.5,  # Lower score threshold
@@ -190,14 +197,17 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
         )
     seen_ids: dict = {}
     for doc in all_docs:
-        if doc["id"] not in seen_ids or doc["score"] > seen_ids[doc["id"]]["score"]:
-            seen_ids[doc["id"]] = doc
+        doc_id = doc.get("id")
+        if doc_id not in seen_ids or (
+            doc.get("score", 0) > seen_ids[doc_id].get("score", 0)
+        ):
+            seen_ids[doc_id] = doc
     res = [
         doc
         for doc in seen_ids.values()
-        if doc["score"] >= runtime.context.settings.search_score_threshold
+        if doc.get("score", 0) >= runtime.context.settings.search_score_threshold
     ]
-    sources = [doc["source"] for doc in res]
+    sources = [doc.get("entity").get("source") for (doc) in res]
     return state.model_copy(
         update={
             "documents": res,
