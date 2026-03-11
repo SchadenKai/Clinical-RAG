@@ -396,7 +396,7 @@ def llm_judge_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentSt
     judge_model = GPTModel(
         model=settings.llm_model_name,
         api_key=settings.llm_api_key,
-        base_url=settings.llm_base_url or None,
+        base_url=settings.llm_base_url,
     )
 
     test_case = LLMTestCase(
@@ -438,20 +438,29 @@ def llm_judge_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentSt
         async_mode=False,
     )
 
-    context_metric.measure(test_case)
-    quality_metric.measure(test_case)
+    try:
+        context_metric.measure(test_case)
+        quality_metric.measure(test_case)
 
-    ctx_score = context_metric.score or 0.0
-    qual_score = quality_metric.score or 0.0
-    overall_score = min(ctx_score, qual_score)
+        ctx_score = context_metric.score or 0.0
+        qual_score = quality_metric.score or 0.0
+        overall_score = min(ctx_score, qual_score)
 
-    # Context deficiency takes routing priority over synthesis deficiency
-    if ctx_score < settings.judge_score_threshold:
+        # Context deficiency takes routing priority over synthesis deficiency
+        if ctx_score < settings.judge_score_threshold:
+            address_back = "query_generation"
+            feedback = context_metric.reason or ""
+        elif qual_score < settings.judge_score_threshold:
+            address_back = "synthesizer"
+            feedback = quality_metric.reason or ""
+        else:
+            address_back = None
+            feedback = ""
+    except Exception as exc:
+        logger.error("LLM judge evaluation failed: %s", exc)
+        overall_score = 0.0
         address_back = "query_generation"
-        feedback = context_metric.reason or ""
-    else:
-        address_back = "synthesizer"
-        feedback = quality_metric.reason or ""
+        feedback = f"Judge evaluation failed: {exc}"
 
     current_judge = state.llm_judge or LLMJudgeState()
     updated_judge = current_judge.model_copy(

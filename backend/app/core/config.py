@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -53,7 +54,7 @@ class Settings(BaseSettings):
     # llm judge config
     judge_score_threshold: float = float(os.environ.get("JUDGE_SCORE_THRESHOLD", "0.7"))
     judge_max_iterations: int = int(os.environ.get("JUDGE_MAX_ITERATIONS", "3"))
-    llm_base_url: str = os.environ.get("LLM_BASE_URL", "")
+    llm_base_url: Optional[str] = os.environ.get("LLM_BASE_URL") or None
 
     # reranker config
     reranker_provider: str = os.environ.get("RERANKER_PROVIDER", "slm")
