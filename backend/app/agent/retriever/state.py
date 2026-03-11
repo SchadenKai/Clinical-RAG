@@ -16,6 +16,6 @@ class AgentState(BaseModel):
     safety_classification: Optional[SafetyClassifierSOModel] = None
     is_verified_citations: bool = True
     wrong_citations: Optional[list] = None
-    llm_judge: Optional[LLMJudgeState] = None
+    llm_judge_state: Optional[LLMJudgeState] = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)

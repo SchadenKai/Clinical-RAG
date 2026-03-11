@@ -19,6 +19,8 @@ from .models import (
 from .prompts import (
     FIX_CITATION_PROMPT,
     HUMAN_MESSAGE_TEMPLATE,
+    JUDGE_ANSWER_QUALITY_CRITERIA,
+    JUDGE_CONTEXT_SUFFICIENCY_CRITERIA,
     JUDGE_FEEDBACK_PROMPT,
     QUERY_GENERATOR_HUMAN_MESSAGE_TEMPLATE,
     QUERY_GENERATOR_HUMAN_MESSAGE_TEMPLATE_WITH_FEEDBACK,
@@ -93,11 +95,11 @@ def generate_queries(state: AgentState, runtime: Runtime[AgentContext]) -> Agent
     if runtime.context.chat_model is None:
         raise ValueError("Missing chat model")
 
-    has_judge_feedback = state.llm_judge and state.llm_judge.feedback
+    has_judge_feedback = state.llm_judge_state and state.llm_judge_state.feedback
     if has_judge_feedback:
         human_content = QUERY_GENERATOR_HUMAN_MESSAGE_TEMPLATE_WITH_FEEDBACK.format(
             user_query=state.input_query,
-            judge_feedback=state.llm_judge.feedback,
+            judge_feedback=state.llm_judge_state.feedback,
         )
     else:
         human_content = QUERY_GENERATOR_HUMAN_MESSAGE_TEMPLATE.format(
@@ -221,7 +223,7 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
     # Consolidate new docs with accumulated docs from previous judge iterations
     accumulated = {
         doc["id"]: doc
-        for doc in ((state.llm_judge.all_documents if state.llm_judge else None) or [])
+        for doc in ((state.llm_judge_state.all_documents if state.llm_judge_state else None) or [])
     }
     for doc in res:
         doc_id = doc.get("id")
@@ -233,14 +235,14 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
 
     sources = [doc.get("source") for doc in merged]
 
-    current_judge = state.llm_judge or LLMJudgeState()
+    current_judge = state.llm_judge_state or LLMJudgeState()
     updated_judge = current_judge.model_copy(update={"all_documents": merged})
 
     return state.model_copy(
         update={
             "documents": merged,
             "sources": sources,
-            "llm_judge": updated_judge,
+            "llm_judge_state": updated_judge,
             "run_metadata": {
                 "search_duration_ms": search_duration_ms,
                 **state.run_metadata,
@@ -287,10 +289,10 @@ def final_report_generation(
             wrong_citations=state.wrong_citations
         )
     elif (
-        state.llm_judge and state.llm_judge.feedback and state.llm_judge.iterations > 0
+        state.llm_judge_state and state.llm_judge_state.feedback and state.llm_judge_state.iterations > 0
     ):
         system_prompt += JUDGE_FEEDBACK_PROMPT.format(
-            judge_feedback=state.llm_judge.feedback,
+            judge_feedback=state.llm_judge_state.feedback,
             previous_answer=state.final_answer or "",
         )
     messages: list[BaseMessage] = [
@@ -407,11 +409,7 @@ def llm_judge_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentSt
 
     context_metric = GEval(
         name="RAG Context Sufficiency",
-        criteria=(
-            "Evaluate whether the retrieval context contains sufficient information "
-            "to comprehensively answer the user's query. Score 1.0 if all aspects of "
-            "the query are addressable from the context, 0.0 if critical information is missing."
-        ),
+        criteria=JUDGE_CONTEXT_SUFFICIENCY_CRITERIA,
         evaluation_params=[
             LLMTestCaseParams.INPUT,
             LLMTestCaseParams.RETRIEVAL_CONTEXT,
@@ -422,12 +420,7 @@ def llm_judge_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentSt
     )
     quality_metric = GEval(
         name="RAG Answer Quality",
-        criteria=(
-            "Evaluate whether the actual output faithfully and completely synthesizes "
-            "the retrieval context to answer the input query. Score 1.0 if the answer "
-            "is accurate, complete, and well-grounded in the context. Score 0.0 if "
-            "it is inaccurate, incomplete, or hallucinates information not in context."
-        ),
+        criteria=JUDGE_ANSWER_QUALITY_CRITERIA,
         evaluation_params=[
             LLMTestCaseParams.INPUT,
             LLMTestCaseParams.ACTUAL_OUTPUT,
@@ -462,7 +455,7 @@ def llm_judge_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentSt
         address_back = "query_generation"
         feedback = f"Judge evaluation failed: {exc}"
 
-    current_judge = state.llm_judge or LLMJudgeState()
+    current_judge = state.llm_judge_state or LLMJudgeState()
     updated_judge = current_judge.model_copy(
         update={
             "score": overall_score,
@@ -471,7 +464,7 @@ def llm_judge_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentSt
             "iterations": current_judge.iterations + 1,
         }
     )
-    return state.model_copy(update={"llm_judge": updated_judge})
+    return state.model_copy(update={"llm_judge_state": updated_judge})
 
 
 def judge_decision(
@@ -485,7 +478,7 @@ def judge_decision(
     """
     threshold = runtime.context.settings.judge_score_threshold
     max_iter = runtime.context.settings.judge_max_iterations
-    judge = state.llm_judge
+    judge = state.llm_judge_state
 
     if (
         judge is None
