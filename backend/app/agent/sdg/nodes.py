@@ -186,9 +186,9 @@ def store_goldens_node(state: AgentState, runtime: Runtime[AgentContext]) -> dic
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     output_key = f"goldens/{file_stem}_{timestamp}.json"
 
-    payload = json.dumps(state.goldens, default=str, ensure_ascii=False, indent=2).encode(
-        "utf-8"
-    )
+    payload = json.dumps(
+        state.goldens, default=str, ensure_ascii=False, indent=2
+    ).encode("utf-8")
     try:
         s3_client.put_object(
             Bucket=settings.minio_bucket_name,

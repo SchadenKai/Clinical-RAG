@@ -281,9 +281,7 @@ class TestStoreGoldensNode:
         mk_s3_client.put_object.side_effect = OSError("connection refused")
 
         goldens = [{"user_input": "q", "reference": "a"}]
-        state = AgentState.model_construct(
-            file_key="uploads/doc.pdf", goldens=goldens
-        )
+        state = AgentState.model_construct(file_key="uploads/doc.pdf", goldens=goldens)
         result = store_goldens_node(state, runtime)
 
         assert result["error"] == "connection refused"
@@ -301,9 +299,7 @@ class TestStoreGoldensNode:
                 return "serialized_value"
 
         goldens = [{"user_input": _Unserializable()}]
-        state = AgentState.model_construct(
-            file_key="uploads/doc.pdf", goldens=goldens
-        )
+        state = AgentState.model_construct(file_key="uploads/doc.pdf", goldens=goldens)
         # Should not raise; default=str converts _Unserializable to its str repr
         result = store_goldens_node(state, runtime)
 
