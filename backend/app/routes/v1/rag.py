@@ -3,7 +3,7 @@ from typing import Annotated, Optional
 
 from deepeval.test_case import LLMTestCase
 from fastapi import APIRouter, Depends, UploadFile
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # INDEXING AGENT deps
 from app.routes.dependencies.data_generator import get_synthetic_data_generator
@@ -110,10 +110,16 @@ def generate_golden_dataset(
 
 class RagasGoldenRequestBody(BaseModel):
     file_key: str
-    testset_size: int = 10
+    testset_size: int = Field(default=10, ge=1, le=100)
 
 
-@rag_router.post("/generate/golden/ragas")
+class RagasGoldenResponse(BaseModel):
+    output_path: Optional[str] = None
+    progress_status: Optional[str] = None
+    error: Optional[str] = None
+
+
+@rag_router.post("/generate/golden/ragas", response_model=RagasGoldenResponse)
 def generate_ragas_golden_dataset(
     request: RagasGoldenRequestBody,
     sdg_service: Annotated[SDGService, Depends(get_sdg_service)],

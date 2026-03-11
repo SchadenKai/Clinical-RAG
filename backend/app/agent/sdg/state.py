@@ -23,5 +23,6 @@ class AgentState(BaseModel):
     # Output
     output_path: Optional[str] = None
     progress_status: Optional[SdgProgressEnum] = None
+    error: Optional[str] = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)

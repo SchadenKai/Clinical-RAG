@@ -1,4 +1,3 @@
-from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import START, StateGraph
 
 from .edges import is_document_empty
@@ -28,5 +27,4 @@ graph.add_edge("document_preparation_node", "knowledge_graph_node")
 graph.add_edge("knowledge_graph_node", "testset_generation_node")
 graph.add_edge("testset_generation_node", "store_goldens_node")
 
-checkpointer = InMemorySaver()
-agent = graph.compile(checkpointer=checkpointer)
+agent = graph.compile()

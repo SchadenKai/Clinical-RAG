@@ -1,4 +1,3 @@
-from functools import lru_cache
 from typing import Annotated
 
 from fastapi import Depends
@@ -16,7 +15,6 @@ from app.services.llm.factory import ChatModelService
 from app.services.sdg import SDGService
 
 
-@lru_cache
 def get_sdg_agent() -> CompiledStateGraph:
     return agent
 

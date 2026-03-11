@@ -17,6 +17,9 @@ from .context import AgentContext
 from .models import SdgProgressEnum
 from .state import AgentState
 
+# Note: progress_status reflects the step that just *completed*, not the step
+# currently running.  Callers should not rely on it for real-time progress.
+
 
 def file_ingestion_node(state: AgentState, runtime: Runtime[AgentContext]) -> dict:
     app_logger.info("SDG: ingesting file %s", state.file_key)
@@ -38,18 +41,43 @@ def file_ingestion_node(state: AgentState, runtime: Runtime[AgentContext]) -> di
 def document_preparation_node(
     state: AgentState, runtime: Runtime[AgentContext]
 ) -> dict:
-    markdown = state.raw_document.export_to_markdown()
-    langchain_doc = Document(
-        page_content=markdown,
-        metadata={"source": state.file_key},
-    )
+    doc = state.raw_document
+    page_nos = sorted(doc.pages.keys()) if doc.pages else []
+
+    if len(page_nos) > 1:
+        documents = []
+        for page_no in page_nos:
+            md = doc.export_to_markdown(page_range=(page_no, page_no))
+            if md.strip():
+                documents.append(
+                    Document(
+                        page_content=md,
+                        metadata={"source": state.file_key, "page": page_no},
+                    )
+                )
+        if not documents:
+            # All pages were empty; fall back to full export
+            documents = [
+                Document(
+                    page_content=doc.export_to_markdown(),
+                    metadata={"source": state.file_key},
+                )
+            ]
+    else:
+        documents = [
+            Document(
+                page_content=doc.export_to_markdown(),
+                metadata={"source": state.file_key},
+            )
+        ]
+
     app_logger.info(
-        "SDG: prepared LangChain Document (%d chars) from %s",
-        len(markdown),
+        "SDG: prepared %d LangChain Document(s) from %s",
+        len(documents),
         state.file_key,
     )
     return {
-        "langchain_documents": [langchain_doc],
+        "langchain_documents": documents,
         "progress_status": SdgProgressEnum.PREPARING_DOCUMENTS,
     }
 
@@ -89,6 +117,18 @@ def knowledge_graph_node(state: AgentState, runtime: Runtime[AgentContext]) -> d
         app_logger.warning(
             "SDG: apply_transforms raised ValueError (document may be too short): %s", e
         )
+        return {
+            "knowledge_graph": kg,
+            "error": str(e),
+            "progress_status": SdgProgressEnum.BUILDING_KNOWLEDGE_GRAPH,
+        }
+    except Exception as e:
+        app_logger.error("SDG: apply_transforms failed: %s", e)
+        return {
+            "knowledge_graph": kg,
+            "error": str(e),
+            "progress_status": SdgProgressEnum.BUILDING_KNOWLEDGE_GRAPH,
+        }
 
     app_logger.info(
         "SDG: KG built — %d nodes, %d relationships",
@@ -121,7 +161,11 @@ def testset_generation_node(state: AgentState, runtime: Runtime[AgentContext]) -
         goldens = testset.to_list()
     except Exception as e:
         app_logger.error("SDG: testset generation failed: %s", e)
-        goldens = []
+        return {
+            "goldens": [],
+            "error": str(e),
+            "progress_status": SdgProgressEnum.GENERATING_TESTSET,
+        }
 
     app_logger.info("SDG: generated %d golden samples", len(goldens))
     return {
@@ -142,13 +186,22 @@ def store_goldens_node(state: AgentState, runtime: Runtime[AgentContext]) -> dic
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     output_key = f"goldens/{file_stem}_{timestamp}.json"
 
-    payload = json.dumps(state.goldens, ensure_ascii=False, indent=2).encode("utf-8")
-    s3_client.put_object(
-        Bucket=settings.minio_bucket_name,
-        Key=output_key,
-        Body=payload,
-        ContentType="application/json",
+    payload = json.dumps(state.goldens, default=str, ensure_ascii=False, indent=2).encode(
+        "utf-8"
     )
+    try:
+        s3_client.put_object(
+            Bucket=settings.minio_bucket_name,
+            Key=output_key,
+            Body=payload,
+            ContentType="application/json",
+        )
+    except Exception as e:
+        app_logger.error("SDG: failed to store goldens at %s: %s", output_key, e)
+        return {
+            "error": str(e),
+            "progress_status": SdgProgressEnum.DONE,
+        }
 
     app_logger.info("SDG: stored %d goldens at %s", len(state.goldens), output_key)
     return {
