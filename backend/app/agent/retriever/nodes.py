@@ -202,15 +202,15 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
             doc.get("score", 0) > seen_ids[doc_id].get("score", 0)
         ):
             seen_ids[doc_id] = doc
-    res = [
+    filtered_docs = [
         doc
         for doc in seen_ids.values()
         if doc.get("score", 0) >= runtime.context.settings.search_score_threshold
     ]
-    sources = [doc.get("entity").get("source") for (doc) in res]
+    sources = [doc.get("source") for doc in filtered_docs]
     return state.model_copy(
         update={
-            "documents": res,
+            "documents": filtered_docs,
             "sources": sources,
             "run_metadata": {
                 "search_duration_ms": search_duration_ms,
