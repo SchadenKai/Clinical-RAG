@@ -32,11 +32,14 @@ class Settings(BaseSettings):
 
     # vector config
     vector_dim: int = 3584
-    text_field_max_length: int = 2048
+    text_field_max_length: int = 10000
     # NOTE: `chunk_size` is passed as `max_tokens` to HybridChunker/HierarchicalChunker.
     # The original LangChain splitters counted characters; Docling counts tokens.
     # The value 1024 was kept as-is and may need tuning for the token-based chunker.
-    chunk_size: int = 1024
+    chunk_size: int = 512
+    # Number of PDF pages to process per batch in Docling's pipeline.
+    # Lower values reduce peak VRAM usage; raise if your GPU has headroom.
+    pdf_batch_size: int = int(os.environ.get("PDF_BATCH_SIZE", "10"))
     lowest_score_threshold: float = 0.6
     highest_score_threshold: float = 1.0
 
