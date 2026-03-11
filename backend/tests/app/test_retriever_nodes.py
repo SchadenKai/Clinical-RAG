@@ -58,7 +58,14 @@ class TestSearchNode:
 
         assert call_kwargs.kwargs["collection_name"] == "test_collection"
         assert call_kwargs.kwargs["limit"] == 9  # reranker_top_k (3) * 3
-        assert call_kwargs.kwargs["output_fields"] == ["text", "category", "source"]
+        assert call_kwargs.kwargs["output_fields"] == [
+            "text",
+            "source",
+            "source_class",
+            "page_title",
+            "chunk_index",
+            "headings",
+        ]
 
         reqs = call_kwargs.kwargs["reqs"]
         assert len(reqs) == 2
