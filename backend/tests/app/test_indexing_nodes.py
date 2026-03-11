@@ -108,6 +108,7 @@ class TestFileIngestionNode:
         runtime.context.s3_service = mocker.Mock()
         runtime.context.settings.minio_bucket_name = "test-bucket"
         runtime.context.settings.minio_endpoint_url = "http://localhost:9000"
+        runtime.context.settings.pdf_batch_size = 10
 
         fake_doc: MockType = mocker.Mock(spec=DoclingDocument)
         fake_doc.name = "test_doc"

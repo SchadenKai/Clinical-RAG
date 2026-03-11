@@ -65,7 +65,10 @@ class LLMJudgeState(BaseModel):
         default=None,
         ge=0.0,
         le=1.0,
-        description="Overall quality score from 0.0 to 1.0 (minimum of context and answer scores)",
+        description=(
+            "Overall quality score from 0.0 to 1.0 "
+            "(minimum of context and answer scores)"
+        ),
     )
     address_back: Optional[Literal["query_generation", "synthesizer"]] = Field(
         default=None,
@@ -85,5 +88,8 @@ class LLMJudgeState(BaseModel):
     )
     all_documents: Optional[list[dict]] = Field(
         default=None,
-        description="Accumulated retrieved documents across all judge iterations (deduplicated)",
+        description=(
+            "Accumulated retrieved documents across all "
+            "judge iterations (deduplicated)"
+        ),
     )

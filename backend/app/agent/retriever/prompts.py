@@ -173,8 +173,9 @@ Improve your answer based on this feedback using the available documents.
 
 JUDGE_CONTEXT_SUFFICIENCY_CRITERIA = (
     "Evaluate whether the retrieval context contains sufficient information "
-    "to comprehensively answer the user's query. Score 1.0 if all aspects of "
-    "the query are addressable from the context, 0.0 if critical information is missing."
+    "to comprehensively answer the user's query. Score 1.0 if all aspects "
+    "of the query are addressable from the context, 0.0 if critical "
+    "information is missing."
 )
 
 JUDGE_ANSWER_QUALITY_CRITERIA = (
