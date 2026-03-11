@@ -73,6 +73,7 @@ class IndexingService:
             chunker=self.chunker_service.get(
                 chunker_name="hybrid",
                 max_tokens=self.settings.chunk_size,
+                tokenizer=self.tokenizer_service.embedding_tokenizer,
             ),
             embedding=self.embedding_service,
             tokenizer=self.tokenizer_service,
