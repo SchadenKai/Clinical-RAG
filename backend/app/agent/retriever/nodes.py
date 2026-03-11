@@ -225,7 +225,9 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
     }
     for doc in res:
         doc_id = doc.get("id")
-        if doc_id not in accumulated or doc.get("score", 0) > accumulated[doc_id].get("score", 0):
+        if doc_id not in accumulated or doc.get("score", 0) > accumulated[doc_id].get(
+            "score", 0
+        ):
             accumulated[doc_id] = doc
     merged = list(accumulated.values())
 
@@ -281,8 +283,12 @@ def final_report_generation(
         raise ValueError("Missing vector database client")
     system_prompt = REPORT_GENERATION_SYSTEM_PROMPT
     if not state.is_verified_citations:
-        system_prompt += FIX_CITATION_PROMPT.format(wrong_citations=state.wrong_citations)
-    elif state.llm_judge and state.llm_judge.feedback and state.llm_judge.iterations > 0:
+        system_prompt += FIX_CITATION_PROMPT.format(
+            wrong_citations=state.wrong_citations
+        )
+    elif (
+        state.llm_judge and state.llm_judge.feedback and state.llm_judge.iterations > 0
+    ):
         system_prompt += JUDGE_FEEDBACK_PROMPT.format(
             judge_feedback=state.llm_judge.feedback,
             previous_answer=state.final_answer or "",
@@ -406,7 +412,10 @@ def llm_judge_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentSt
             "to comprehensively answer the user's query. Score 1.0 if all aspects of "
             "the query are addressable from the context, 0.0 if critical information is missing."
         ),
-        evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.RETRIEVAL_CONTEXT],
+        evaluation_params=[
+            LLMTestCaseParams.INPUT,
+            LLMTestCaseParams.RETRIEVAL_CONTEXT,
+        ],
         model=judge_model,
         threshold=settings.judge_score_threshold,
         async_mode=False,
@@ -469,7 +478,11 @@ def judge_decision(
     max_iter = runtime.context.settings.judge_max_iterations
     judge = state.llm_judge
 
-    if judge is None or (judge.score is not None and judge.score >= threshold) or judge.iterations >= max_iter:
+    if (
+        judge is None
+        or (judge.score is not None and judge.score >= threshold)
+        or judge.iterations >= max_iter
+    ):
         return "__end__"
     if judge.address_back == "synthesizer":
         return "final_report_generation"
