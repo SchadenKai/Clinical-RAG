@@ -34,26 +34,30 @@ export async function* streamChat(
   const decoder = new TextDecoder();
   let buffer = '';
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-    buffer += decoder.decode(value, { stream: true });
+      buffer += decoder.decode(value, { stream: true });
 
-    // Parse SSE lines: "data: {...}\n\n"
-    const parts = buffer.split('\n\n');
-    buffer = parts.pop() ?? '';
+      // Parse SSE lines: "data: {...}\n\n"
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop() ?? '';
 
-    for (const part of parts) {
-      const trimmed = part.trim();
-      if (!trimmed.startsWith('data: ')) continue;
-      const json = trimmed.slice(6);
-      try {
-        const event: AguiEvent = JSON.parse(json);
-        yield event;
-      } catch {
-        console.warn('Failed to parse AGUI event:', json);
+      for (const part of parts) {
+        const trimmed = part.trim();
+        if (!trimmed.startsWith('data: ')) continue;
+        const json = trimmed.slice(6);
+        try {
+          const event: AguiEvent = JSON.parse(json);
+          yield event;
+        } catch {
+          console.warn('Failed to parse AGUI event:', json);
+        }
       }
     }
+  } finally {
+    reader.releaseLock();
   }
 }

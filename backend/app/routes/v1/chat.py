@@ -22,6 +22,7 @@ from pydantic import BaseModel
 from app.agent.react_agent.context import AgentContext as ReactAgentContext
 from app.agent.react_agent.state import AgentState as ReactAgentState
 from app.agent.retriever.context import AgentContext as RetrieverAgentContext
+from app.agent.retriever.models import SafetyClassificationEnum
 from app.agent.retriever.state import AgentState as RetrieverAgentState
 from app.routes.dependencies.chat_service import get_chat_service
 from app.routes.dependencies.rag import get_retrieval_service
@@ -152,7 +153,7 @@ def _stream_clinical_rag_agent(
                     CustomEvent(
                         name="safety_classification",
                         value={
-                            "classification": sc.classification.value,
+                            "classification": sc.classification.value if isinstance(sc.classification, SafetyClassificationEnum) else sc.classification,
                             "confidence_score": sc.confidence_score,
                             "supporting_args": sc.supporting_args,
                         },
