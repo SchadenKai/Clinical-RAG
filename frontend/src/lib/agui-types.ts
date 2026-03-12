@@ -67,6 +67,16 @@ export interface CustomEvent extends AguiBaseEvent {
   value: unknown;
 }
 
+export interface StateSnapshotEvent extends AguiBaseEvent {
+  type: 'STATE_SNAPSHOT';
+  snapshot: unknown;
+}
+
+export interface StateDeltaEvent extends AguiBaseEvent {
+  type: 'STATE_DELTA';
+  delta: unknown[]; // JSON Patch operations (RFC 6902)
+}
+
 export type AguiEvent =
   | RunStartedEvent
   | RunFinishedEvent
@@ -76,4 +86,6 @@ export type AguiEvent =
   | TextMessageStartEvent
   | TextMessageContentEvent
   | TextMessageEndEvent
+  | StateSnapshotEvent
+  | StateDeltaEvent
   | CustomEvent;
