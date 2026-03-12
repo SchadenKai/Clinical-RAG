@@ -40,7 +40,7 @@ export function MessageBubble({ message, onDocumentClick }: MessageBubbleProps) 
     <ReactMarkdown 
       remarkPlugins={[remarkGfm]}
       components={{
-        a: ({ node, ...props }) => {
+        a: ({ ...props }) => {
           const isCitation = !isNaN(Number(props.children)) && props.href;
           if (isCitation) {
             return (
@@ -76,10 +76,13 @@ export function MessageBubble({ message, onDocumentClick }: MessageBubbleProps) 
                       el.classList.add('doc-highlight', 'ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-background', 'transition-all');
                       
                       // Clear after 2s using a reference to avoid clearing a newly clicked one
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       if ((window as any)[`highlightTimeout-${message.id}`]) {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         clearTimeout((window as any)[`highlightTimeout-${message.id}`]);
                       }
                       
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       (window as any)[`highlightTimeout-${message.id}`] = setTimeout(() => {
                         el.classList.remove('doc-highlight', 'ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-background');
                       }, 2000);

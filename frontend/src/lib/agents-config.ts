@@ -1,4 +1,4 @@
-import { Brain, Stethoscope, TypeIcon as type, LucideIcon } from 'lucide-react';
+import { Brain, Stethoscope, LucideIcon } from 'lucide-react';
 
 export type AgentId = 'general' | 'clinical_rag';
 

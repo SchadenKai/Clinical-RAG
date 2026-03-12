@@ -1,15 +1,24 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { AgentId } from '@/lib/agents-config';
-import { MessageProps } from '@/components/chat/message-bubble';
+import { MessageProps, ChatDocument } from '@/components/chat/message-bubble';
+import { StepProgress } from '@/components/chat/agent-steps';
+import { applyPatch, Operation } from 'fast-json-patch';
+import { streamChat } from '@/lib/agui-client';
+import { CustomEvent as AguiCustomEvent } from '@/lib/agui-types';
 import db from '@/lib/dummy-db.json';
 
-// Mock hook for chat session. Real implementation would use TanStack Query/Mutations
 export function useChatSession(chatId?: string, initialAgent: AgentId = 'general') {
   const [activeAgent, setActiveAgent] = useState<AgentId>(initialAgent);
   const [messages, setMessages] = useState<MessageProps[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [steps, setSteps] = useState<StepProgress[]>([]);
+  const [streamingContent, setStreamingContent] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [sessionState, setSessionState] = useState<unknown>(null);
+  const [documents, setDocuments] = useState<ChatDocument[]>([]);
+  const abortRef = useRef<AbortController | null>(null);
 
-  // Load chat session if a chatId is provided
+  // Load chat session history if chatId provided
   useEffect(() => {
     if (chatId) {
       const history = db.chatHistory.find((c) => c.id === chatId);
@@ -19,14 +28,18 @@ export function useChatSession(chatId?: string, initialAgent: AgentId = 'general
         return;
       }
     }
-    // Fallback/Default for new chats
     setMessages([]);
     setActiveAgent(initialAgent);
   }, [chatId, initialAgent]);
 
   const sendMessage = useCallback(
     async (content: string) => {
-      // 1. Add user message
+      // Abort any in-flight request
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      // Add user message immediately
       const userMessage: MessageProps = {
         id: Date.now().toString(),
         role: 'user',
@@ -34,23 +47,155 @@ export function useChatSession(chatId?: string, initialAgent: AgentId = 'general
       };
       setMessages((prev) => [...prev, userMessage]);
       setIsLoading(true);
+      setSteps([]);
+      setStreamingContent('');
+      setError(null);
+      setSessionState(null);
+      setDocuments([]);
 
-      // 2. Simulate API call
-      setTimeout(() => {
-        const aiMessage: MessageProps = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: `This is a mock response from the ${
-            activeAgent === 'clinical_rag' ? 'Clinical Guidelines Agent' : 'General Assistant'
-          }.\n\nI received your message: "${content}"`,
-          agentId: activeAgent,
-        };
-        setMessages((prev) => [...prev, aiMessage]);
+      // Accumulate data for the assistant message
+      let messageId = '';
+      let fullContent = '';
+      let localDocuments: ChatDocument[] = [];
+      let localSources: string[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let finalState: Record<string, any> | null = (sessionState as Record<string, any>) || null;
+
+      try {
+        for await (const event of streamChat(
+          { query: content, agentId: activeAgent, isLlmEnabled: true },
+          controller.signal,
+        )) {
+          switch (event.type) {
+            case 'STEP_STARTED':
+              setSteps((prev) => [
+                ...prev.map((s) =>
+                  s.status === 'active' ? { ...s, status: 'completed' as const } : s,
+                ),
+                { name: event.stepName, status: 'active' },
+              ]);
+              break;
+
+            case 'STEP_FINISHED':
+              setSteps((prev) =>
+                prev.map((s) =>
+                  s.name === event.stepName ? { ...s, status: 'completed' as const } : s,
+                ),
+              );
+              break;
+
+            case 'TEXT_MESSAGE_START':
+              messageId = event.messageId;
+              break;
+
+            case 'TEXT_MESSAGE_CONTENT':
+              fullContent += event.delta;
+              setStreamingContent(fullContent);
+              break;
+
+            case 'TEXT_MESSAGE_END':
+              break;
+
+            case 'CUSTOM': {
+              const customEvt = event as AguiCustomEvent;
+              if (customEvt.name === 'documents') {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const docs = (customEvt.value as Array<any>).map(
+                  (doc: any, idx: number) => ({
+                    id: typeof doc.id === 'number' ? doc.id : idx,
+                    text: doc.entity?.text || doc.text || '',
+                    source: doc.entity?.source || doc.source || doc.page_title || '',
+                    score: doc.score || doc.distance || 0,
+                  }),
+                );
+                localDocuments = docs;
+                setDocuments(docs);
+              }
+              if (customEvt.name === 'sources') {
+                localSources = customEvt.value as string[];
+              }
+              break;
+            }
+
+            case 'RUN_ERROR':
+              setError(event.message);
+              break;
+
+            case 'RUN_FINISHED':
+              break;
+
+            case 'STATE_SNAPSHOT': {
+              finalState = event.snapshot as Record<string, any>;
+              setSessionState(finalState);
+              if (finalState?.documents && Array.isArray(finalState.documents)) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const docs = finalState.documents.map((doc: any, idx: number) => ({
+                  id: typeof doc.id === 'number' ? doc.id : idx,
+                  text: doc.entity?.text || doc.text || '',
+                  source: doc.entity?.source || doc.source || doc.page_title || '',
+                  score: doc.score || doc.distance || 0,
+                }));
+                localDocuments = docs;
+                setDocuments(docs);
+              }
+              break;
+            }
+
+            case 'STATE_DELTA': {
+              const doc = structuredClone(finalState ?? {}) as object;
+              const newDoc = applyPatch(doc, event.delta as Operation[]).newDocument;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              finalState = newDoc as Record<string, any>;
+              setSessionState(finalState);
+              if (finalState?.documents && Array.isArray(finalState.documents)) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const docs = finalState.documents.map((d: any, idx: number) => ({
+                  id: typeof d.id === 'number' ? d.id : idx,
+                  text: d.entity?.text || d.text || '',
+                  source: d.entity?.source || d.source || d.page_title || '',
+                  score: d.score || d.distance || 0,
+                }));
+                localDocuments = docs;
+                setDocuments(docs);
+              }
+              break;
+            }
+          }
+        }
+
+        // Add the completed assistant message
+        if (fullContent) {
+          if (finalState?.sources && Array.isArray(finalState.sources) && localSources.length === 0) {
+            localSources = finalState.sources;
+          }
+
+          const aiMessage: MessageProps = {
+            id: messageId || (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: fullContent,
+            agentId: activeAgent,
+            documents: localDocuments.length > 0 ? localDocuments : undefined,
+            sources: localSources.length > 0 ? localSources : undefined,
+          };
+          setMessages((prev) => [...prev, aiMessage]);
+        }
+      } catch (err: unknown) {
+        if ((err as Error).name !== 'AbortError') {
+          setError((err as Error).message ?? 'Stream failed');
+        }
+      } finally {
         setIsLoading(false);
-      }, 1500);
+        setStreamingContent('');
+      }
     },
-    [activeAgent]
+    [activeAgent, sessionState],
   );
+
+  const cancelStream = useCallback(() => {
+    abortRef.current?.abort();
+    setIsLoading(false);
+    setStreamingContent('');
+  }, []);
 
   return {
     messages,
@@ -58,5 +203,11 @@ export function useChatSession(chatId?: string, initialAgent: AgentId = 'general
     sendMessage,
     activeAgent,
     setActiveAgent,
+    steps,
+    streamingContent,
+    error,
+    sessionState,
+    cancelStream,
+    documents,
   };
 }
