@@ -153,7 +153,9 @@ def _stream_clinical_rag_agent(
                     CustomEvent(
                         name="safety_classification",
                         value={
-                            "classification": sc.classification.value if isinstance(sc.classification, SafetyClassificationEnum) else sc.classification,
+                            "classification": sc.classification.value
+                            if isinstance(sc.classification, SafetyClassificationEnum)
+                            else sc.classification,
                             "confidence_score": sc.confidence_score,
                             "supporting_args": sc.supporting_args,
                         },
