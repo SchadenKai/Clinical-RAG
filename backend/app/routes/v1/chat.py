@@ -1,12 +1,6 @@
 import uuid
 from typing import Annotated, Generator, Literal, cast
 
-from fastapi import APIRouter, Depends
-from fastapi.responses import StreamingResponse
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from langchain_core.runnables import RunnableConfig
-from pydantic import BaseModel
-
 from ag_ui.core import (
     CustomEvent,
     RunErrorEvent,
@@ -19,6 +13,11 @@ from ag_ui.core import (
     TextMessageStartEvent,
 )
 from ag_ui.encoder import EventEncoder
+from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.runnables import RunnableConfig
+from pydantic import BaseModel
 
 from app.agent.react_agent.context import AgentContext as ReactAgentContext
 from app.agent.react_agent.state import AgentState as ReactAgentState
@@ -167,9 +166,7 @@ def _stream_clinical_rag_agent(
                     d.pop("vector", None)
                     d.pop("sparse_vector", None)
                     clean_docs.append(d)
-                yield encoder.encode(
-                    CustomEvent(name="documents", value=clean_docs)
-                )
+                yield encoder.encode(CustomEvent(name="documents", value=clean_docs))
 
             if "sources" in state_update:
                 yield encoder.encode(
@@ -207,9 +204,7 @@ def stream_chat(
 
     def event_generator():
         try:
-            yield encoder.encode(
-                RunStartedEvent(thread_id=thread_id, run_id=run_id)
-            )
+            yield encoder.encode(RunStartedEvent(thread_id=thread_id, run_id=run_id))
 
             if body.agent_id == "general":
                 yield from _stream_general_agent(
@@ -220,9 +215,7 @@ def stream_chat(
                     retrieval_service, body, thread_id, message_id, encoder
                 )
 
-            yield encoder.encode(
-                RunFinishedEvent(thread_id=thread_id, run_id=run_id)
-            )
+            yield encoder.encode(RunFinishedEvent(thread_id=thread_id, run_id=run_id))
         except Exception as e:
             yield encoder.encode(RunErrorEvent(message=str(e), code="INTERNAL_ERROR"))
 
