@@ -11,6 +11,7 @@ from app.logger import app_logger
 
 from .context import AgentContext
 from .models import (
+    LLMJudgeState,
     QueryGeneratorSOModel,
     SafetyClassificationEnum,
     SafetyClassifierSOModel,
@@ -18,7 +19,11 @@ from .models import (
 from .prompts import (
     FIX_CITATION_PROMPT,
     HUMAN_MESSAGE_TEMPLATE,
+    JUDGE_ANSWER_QUALITY_CRITERIA,
+    JUDGE_CONTEXT_SUFFICIENCY_CRITERIA,
+    JUDGE_FEEDBACK_PROMPT,
     QUERY_GENERATOR_HUMAN_MESSAGE_TEMPLATE,
+    QUERY_GENERATOR_HUMAN_MESSAGE_TEMPLATE_WITH_FEEDBACK,
     QUERY_GENERATOR_SYSTEM_PROMPT,
     REFUSAL_AGENT_HUMAN_PROMPT_TEMPLATE,
     REFUSAL_AGENT_SYSTEM_PROMPT,
@@ -90,13 +95,20 @@ def generate_queries(state: AgentState, runtime: Runtime[AgentContext]) -> Agent
     if runtime.context.chat_model is None:
         raise ValueError("Missing chat model")
 
+    has_judge_feedback = state.llm_judge_state and state.llm_judge_state.feedback
+    if has_judge_feedback:
+        human_content = QUERY_GENERATOR_HUMAN_MESSAGE_TEMPLATE_WITH_FEEDBACK.format(
+            user_query=state.input_query,
+            judge_feedback=state.llm_judge_state.feedback,
+        )
+    else:
+        human_content = QUERY_GENERATOR_HUMAN_MESSAGE_TEMPLATE.format(
+            user_query=state.input_query
+        )
+
     messages: list[BaseMessage] = [
         SystemMessage(content=QUERY_GENERATOR_SYSTEM_PROMPT),
-        HumanMessage(
-            content=QUERY_GENERATOR_HUMAN_MESSAGE_TEMPLATE.format(
-                user_query=state.input_query
-            )
-        ),
+        HumanMessage(content=human_content),
     ]
     chat_model = runtime.context.chat_model.with_structured_output(
         schema=QueryGeneratorSOModel
@@ -207,11 +219,33 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
         for doc in seen_ids.values()
         if doc.get("score", 0) >= runtime.context.settings.search_score_threshold
     ]
-    sources = [doc.get("entity").get("source") for (doc) in res]
+
+    # Consolidate new docs with accumulated docs from previous judge iterations
+    accumulated = {
+        doc["id"]: doc
+        for doc in (
+            (state.llm_judge_state.all_documents if state.llm_judge_state else None)
+            or []
+        )
+    }
+    for doc in res:
+        doc_id = doc.get("id")
+        if doc_id not in accumulated or doc.get("score", 0) > accumulated[doc_id].get(
+            "score", 0
+        ):
+            accumulated[doc_id] = doc
+    merged = list(accumulated.values())
+
+    sources = [doc.get("source") for doc in merged]
+
+    current_judge = state.llm_judge_state or LLMJudgeState()
+    updated_judge = current_judge.model_copy(update={"all_documents": merged})
+
     return state.model_copy(
         update={
-            "documents": res,
+            "documents": merged,
             "sources": sources,
+            "llm_judge_state": updated_judge,
             "run_metadata": {
                 "search_duration_ms": search_duration_ms,
                 **state.run_metadata,
@@ -252,12 +286,20 @@ def final_report_generation(
 ) -> AgentState:
     if runtime.context.chat_model is None:
         raise ValueError("Missing vector database client")
-    system_prompt = (
-        REPORT_GENERATION_SYSTEM_PROMPT
-        if state.is_verified_citations
-        else REPORT_GENERATION_SYSTEM_PROMPT
-        + FIX_CITATION_PROMPT.format(wrong_citations=state.wrong_citations)
-    )
+    system_prompt = REPORT_GENERATION_SYSTEM_PROMPT
+    if not state.is_verified_citations:
+        system_prompt += FIX_CITATION_PROMPT.format(
+            wrong_citations=state.wrong_citations
+        )
+    elif (
+        state.llm_judge_state
+        and state.llm_judge_state.feedback
+        and state.llm_judge_state.iterations > 0
+    ):
+        system_prompt += JUDGE_FEEDBACK_PROMPT.format(
+            judge_feedback=state.llm_judge_state.feedback,
+            previous_answer=state.final_answer or "",
+        )
     messages: list[BaseMessage] = [
         SystemMessage(content=system_prompt),
         HumanMessage(
@@ -327,10 +369,10 @@ def citation_verification(state: AgentState) -> AgentState:
 
 def is_citation_correct(
     state: AgentState,
-) -> Literal["final_report_generation", "__end__"]:
+) -> Literal["final_report_generation", "llm_judge_node"]:
     app_logger.debug(f"Checking citation state: {state.is_verified_citations}")
     if state.is_verified_citations:
-        return "__end__"
+        return "llm_judge_node"
     app_logger.debug(f"Wrong citations: {state.wrong_citations}")
     return "final_report_generation"
 
@@ -341,3 +383,114 @@ def should_use_llm(
     if runtime.context.include_generation:
         return "final_report_generation"
     return "__end__"
+
+
+def llm_judge_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
+    """
+    Evaluates the final answer quality using two DeepEval GEval metrics:
+    1. RAG Context Sufficiency — are the retrieved docs enough to answer the query?
+    2. RAG Answer Quality — does the synthesis faithfully use the docs?
+
+    Routing logic (set in llm_judge.address_back):
+    - 'query_generation': context is lacking → retrieve additional documents
+    - 'synthesizer': context is sufficient but synthesis is poor → refine the answer
+    """
+    from deepeval.metrics import GEval
+    from deepeval.models import GPTModel
+    from deepeval.test_case import LLMTestCase, LLMTestCaseParams
+
+    settings = runtime.context.settings
+    judge_model = GPTModel(
+        model=settings.llm_model_name,
+        api_key=settings.llm_api_key,
+        base_url=settings.llm_base_url,
+    )
+
+    test_case = LLMTestCase(
+        input=state.input_query,
+        actual_output=state.final_answer or "",
+        retrieval_context=[doc.get("text", "") for doc in (state.documents or [])],
+    )
+
+    context_metric = GEval(
+        name="RAG Context Sufficiency",
+        criteria=JUDGE_CONTEXT_SUFFICIENCY_CRITERIA,
+        evaluation_params=[
+            LLMTestCaseParams.INPUT,
+            LLMTestCaseParams.RETRIEVAL_CONTEXT,
+        ],
+        model=judge_model,
+        threshold=settings.judge_score_threshold,
+        async_mode=False,
+    )
+    quality_metric = GEval(
+        name="RAG Answer Quality",
+        criteria=JUDGE_ANSWER_QUALITY_CRITERIA,
+        evaluation_params=[
+            LLMTestCaseParams.INPUT,
+            LLMTestCaseParams.ACTUAL_OUTPUT,
+            LLMTestCaseParams.RETRIEVAL_CONTEXT,
+        ],
+        model=judge_model,
+        threshold=settings.judge_score_threshold,
+        async_mode=False,
+    )
+
+    try:
+        context_metric.measure(test_case)
+        quality_metric.measure(test_case)
+
+        ctx_score = context_metric.score or 0.0
+        qual_score = quality_metric.score or 0.0
+        overall_score = min(ctx_score, qual_score)
+
+        # Context deficiency takes routing priority over synthesis deficiency
+        if ctx_score < settings.judge_score_threshold:
+            address_back = "query_generation"
+            feedback = context_metric.reason or ""
+        elif qual_score < settings.judge_score_threshold:
+            address_back = "synthesizer"
+            feedback = quality_metric.reason or ""
+        else:
+            address_back = None
+            feedback = ""
+    except Exception as exc:
+        logger.error("LLM judge evaluation failed: %s", exc)
+        overall_score = 0.0
+        address_back = "query_generation"
+        feedback = f"Judge evaluation failed: {exc}"
+
+    current_judge = state.llm_judge_state or LLMJudgeState()
+    updated_judge = current_judge.model_copy(
+        update={
+            "score": overall_score,
+            "address_back": address_back,
+            "feedback": feedback,
+            "iterations": current_judge.iterations + 1,
+        }
+    )
+    return state.model_copy(update={"llm_judge_state": updated_judge})
+
+
+def judge_decision(
+    state: AgentState, runtime: Runtime[AgentContext]
+) -> Literal["__end__", "final_report_generation", "generate_queries"]:
+    """
+    Routes after llm_judge_node:
+    - __end__: score passes threshold or max iterations reached
+    - final_report_generation: synthesis needs refinement
+    - generate_queries: additional document retrieval needed
+    """
+    threshold = runtime.context.settings.judge_score_threshold
+    max_iter = runtime.context.settings.judge_max_iterations
+    judge = state.llm_judge_state
+
+    if (
+        judge is None
+        or (judge.score is not None and judge.score >= threshold)
+        or judge.iterations >= max_iter
+    ):
+        return "__end__"
+    if judge.address_back == "synthesizer":
+        return "final_report_generation"
+    return "generate_queries"
