@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { AgentId } from '@/lib/agents-config';
 import { MessageProps, ChatDocument } from '@/components/chat/message-bubble';
 import { StepProgress } from '@/components/chat/agent-steps';
+import { applyPatch, Operation } from 'fast-json-patch';
 import { streamChat } from '@/lib/agui-client';
 import { CustomEvent as AguiCustomEvent } from '@/lib/agui-types';
 import db from '@/lib/dummy-db.json';
@@ -13,6 +14,7 @@ export function useChatSession(chatId?: string, initialAgent: AgentId = 'general
   const [steps, setSteps] = useState<StepProgress[]>([]);
   const [streamingContent, setStreamingContent] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [sessionState, setSessionState] = useState<unknown>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   // Load chat session history if chatId provided
@@ -47,6 +49,7 @@ export function useChatSession(chatId?: string, initialAgent: AgentId = 'general
       setSteps([]);
       setStreamingContent('');
       setError(null);
+      setSessionState(null);
 
       // Accumulate data for the assistant message
       let messageId = '';
@@ -113,6 +116,17 @@ export function useChatSession(chatId?: string, initialAgent: AgentId = 'general
 
             case 'RUN_FINISHED':
               break;
+
+            case 'STATE_SNAPSHOT':
+              setSessionState(event.snapshot);
+              break;
+
+            case 'STATE_DELTA':
+              setSessionState((prev) => {
+                const doc = structuredClone(prev ?? {}) as object;
+                return applyPatch(doc, event.delta as Operation[]).newDocument;
+              });
+              break;
           }
         }
 
@@ -155,6 +169,7 @@ export function useChatSession(chatId?: string, initialAgent: AgentId = 'general
     steps,
     streamingContent,
     error,
+    sessionState,
     cancelStream,
   };
 }
