@@ -15,6 +15,7 @@ export function useChatSession(chatId?: string, initialAgent: AgentId = 'general
   const [streamingContent, setStreamingContent] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [sessionState, setSessionState] = useState<unknown>(null);
+  const [documents, setDocuments] = useState<ChatDocument[]>([]);
   const abortRef = useRef<AbortController | null>(null);
 
   // Load chat session history if chatId provided
@@ -50,12 +51,15 @@ export function useChatSession(chatId?: string, initialAgent: AgentId = 'general
       setStreamingContent('');
       setError(null);
       setSessionState(null);
+      setDocuments([]);
 
       // Accumulate data for the assistant message
       let messageId = '';
       let fullContent = '';
-      let documents: ChatDocument[] = [];
-      let sources: string[] = [];
+      let localDocuments: ChatDocument[] = [];
+      let localSources: string[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let finalState: Record<string, any> | null = (sessionState as Record<string, any>) || null;
 
       try {
         for await (const event of streamChat(
@@ -95,17 +99,20 @@ export function useChatSession(chatId?: string, initialAgent: AgentId = 'general
             case 'CUSTOM': {
               const customEvt = event as AguiCustomEvent;
               if (customEvt.name === 'documents') {
-                documents = (customEvt.value as Array<Record<string, unknown>>).map(
-                  (doc, idx) => ({
-                    id: (doc.id as number) ?? idx,
-                    text: (doc.text as string) ?? '',
-                    source: (doc.source as string) ?? '',
-                    score: (doc.score as number) ?? 0,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const docs = (customEvt.value as Array<any>).map(
+                  (doc: any, idx: number) => ({
+                    id: typeof doc.id === 'number' ? doc.id : idx,
+                    text: doc.entity?.text || doc.text || '',
+                    source: doc.entity?.source || doc.source || doc.page_title || '',
+                    score: doc.score || doc.distance || 0,
                   }),
                 );
+                localDocuments = docs;
+                setDocuments(docs);
               }
               if (customEvt.name === 'sources') {
-                sources = customEvt.value as string[];
+                localSources = customEvt.value as string[];
               }
               break;
             }
@@ -117,28 +124,58 @@ export function useChatSession(chatId?: string, initialAgent: AgentId = 'general
             case 'RUN_FINISHED':
               break;
 
-            case 'STATE_SNAPSHOT':
-              setSessionState(event.snapshot);
+            case 'STATE_SNAPSHOT': {
+              finalState = event.snapshot as Record<string, any>;
+              setSessionState(finalState);
+              if (finalState?.documents && Array.isArray(finalState.documents)) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const docs = finalState.documents.map((doc: any, idx: number) => ({
+                  id: typeof doc.id === 'number' ? doc.id : idx,
+                  text: doc.entity?.text || doc.text || '',
+                  source: doc.entity?.source || doc.source || doc.page_title || '',
+                  score: doc.score || doc.distance || 0,
+                }));
+                localDocuments = docs;
+                setDocuments(docs);
+              }
               break;
+            }
 
-            case 'STATE_DELTA':
-              setSessionState((prev) => {
-                const doc = structuredClone(prev ?? {}) as object;
-                return applyPatch(doc, event.delta as Operation[]).newDocument;
-              });
+            case 'STATE_DELTA': {
+              const doc = structuredClone(finalState ?? {}) as object;
+              const newDoc = applyPatch(doc, event.delta as Operation[]).newDocument;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              finalState = newDoc as Record<string, any>;
+              setSessionState(finalState);
+              if (finalState?.documents && Array.isArray(finalState.documents)) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const docs = finalState.documents.map((d: any, idx: number) => ({
+                  id: typeof d.id === 'number' ? d.id : idx,
+                  text: d.entity?.text || d.text || '',
+                  source: d.entity?.source || d.source || d.page_title || '',
+                  score: d.score || d.distance || 0,
+                }));
+                localDocuments = docs;
+                setDocuments(docs);
+              }
               break;
+            }
           }
         }
 
         // Add the completed assistant message
         if (fullContent) {
+          if (finalState?.sources && Array.isArray(finalState.sources) && localSources.length === 0) {
+            localSources = finalState.sources;
+          }
+
           const aiMessage: MessageProps = {
             id: messageId || (Date.now() + 1).toString(),
             role: 'assistant',
             content: fullContent,
             agentId: activeAgent,
-            documents: documents.length > 0 ? documents : undefined,
-            sources: sources.length > 0 ? sources : undefined,
+            documents: localDocuments.length > 0 ? localDocuments : undefined,
+            sources: localSources.length > 0 ? localSources : undefined,
           };
           setMessages((prev) => [...prev, aiMessage]);
         }
@@ -151,7 +188,7 @@ export function useChatSession(chatId?: string, initialAgent: AgentId = 'general
         setStreamingContent('');
       }
     },
-    [activeAgent],
+    [activeAgent, sessionState],
   );
 
   const cancelStream = useCallback(() => {
@@ -171,5 +208,6 @@ export function useChatSession(chatId?: string, initialAgent: AgentId = 'general
     error,
     sessionState,
     cancelStream,
+    documents,
   };
 }

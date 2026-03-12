@@ -15,7 +15,7 @@ import db from '@/lib/dummy-db.json';
 export function ChatInterface() {
   const params = useParams();
   const chatId = typeof params?.id === 'string' ? params.id : undefined;
-  const { messages, isLoading, sendMessage, activeAgent, setActiveAgent, steps, streamingContent, error } = useChatSession(chatId);
+  const { messages, isLoading, sendMessage, activeAgent, setActiveAgent, steps, streamingContent, error, documents } = useChatSession(chatId);
   const [input, setInput] = React.useState('');
   const [selectedDocument, setSelectedDocument] = React.useState<ChatDocument | null>(null);
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -129,6 +129,7 @@ export function ChatInterface() {
                       role: 'assistant',
                       content: streamingContent,
                       agentId: activeAgent,
+                      documents: documents.length > 0 ? documents : undefined,
                     }}
                   />
                 )}
