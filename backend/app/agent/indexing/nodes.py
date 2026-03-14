@@ -109,16 +109,6 @@ def _source_metadata(website_url: str) -> SourceClass:
     return source_class
 
 
-def derive_source(chunk: DocChunk, pipeline_metadata: dict) -> str:
-    origin = chunk.meta.origin if chunk.meta else None
-    if origin:
-        if origin.uri:
-            return str(origin.uri)
-        if origin.filename:
-            return origin.filename
-    return pipeline_metadata.get("source", "")
-
-
 def metadata_builder_node(
     state: AgentState, runtime: Runtime[AgentContext]
 ) -> AgentState:
@@ -158,11 +148,8 @@ def metadata_builder_node(
             )
             continue
 
-        source = derive_source(chunk, pipeline_meta)
-
         chunk_metadata = {
             **pipeline_meta,
-            "source": source,
             "content_hash": content_hash,
             # Store cleaned text so doc_builder_node can reuse it without re-cleaning
             "cleaned_text": cleaned_text,

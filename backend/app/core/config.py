@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     llm_api_key: str = os.environ.get("LLM_API_KEY", openai_api_key)
     llm_provider: str = os.environ.get("LLM_PROVIDER", "openai")
     llm_model_name: str = os.environ.get("LLM_MODEL_NAME", "gpt-4o")
+    llm_base_url: Optional[str] = os.environ.get("LLM_BASE_URL") or None
 
     milvus_url: str = os.environ.get("MILVUS_URL", "http://localhost:19530")
     milvus_db_name: str = os.environ.get("MILVUS_DB_NAME", "cdc_rag")
@@ -45,7 +46,7 @@ class Settings(BaseSettings):
     highest_score_threshold: float = 1.0
 
     # hybrid search config
-    search_limit: int = 3
+    search_limit: int = 5
     rrf_k: int = 60
     search_score_threshold: float = 0.01
 
@@ -54,7 +55,7 @@ class Settings(BaseSettings):
     # llm judge config
     judge_score_threshold: float = float(os.environ.get("JUDGE_SCORE_THRESHOLD", "0.7"))
     judge_max_iterations: int = int(os.environ.get("JUDGE_MAX_ITERATIONS", "3"))
-    llm_base_url: Optional[str] = os.environ.get("LLM_BASE_URL") or None
+    
 
     # reranker config
     reranker_provider: str = os.environ.get("RERANKER_PROVIDER", "slm")
