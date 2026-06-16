@@ -236,7 +236,7 @@ def search(state: AgentState, runtime: Runtime[AgentContext]) -> AgentState:
             accumulated[doc_id] = doc
     merged = list(accumulated.values())
 
-    sources = [doc.get("entity").get("source") for doc in merged]
+    sources = [doc.get("source") for doc in merged if "source" in doc]
 
     current_judge = state.llm_judge_state or LLMJudgeState()
     updated_judge = current_judge.model_copy(update={"all_documents": merged})
