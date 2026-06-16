@@ -19,15 +19,21 @@ services:
       timeout: 20s
       retries: 3
 
+  # Milvus's INTERNAL object store. This is owned by Milvus and stores its
+  # segments/indexes/binlogs in the "a-bucket" bucket. It is intentionally NOT
+  # published to the host so it can never be confused with or overlap the
+  # application's MinIO (minio_local). Milvus reaches it over the docker network
+  # via MINIO_ADDRESS=minio:9000. To debug it, temporarily add a host port that
+  # does NOT collide with minio_local's 7000/7001 (e.g. "9010:9000").
   minio:
     container_name: milvus-minio
     image: minio/minio:RELEASE.2024-12-18T13-15-44Z
     environment:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
-    ports:
-      - "9001:9001"
-      - "9000:9000"
+    expose:
+      - "9000"
+      - "9001"
     volumes:
       - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/minio:/minio_data
     command: minio server /minio_data --console-address ":9001"

@@ -175,5 +175,5 @@ Config is loaded from `.env` at the project root. Key variables:
 - `EMBEDDING_PROVIDER`, `EMBEDDING_MODEL`, `EMBEDDING_API_KEY` — embedding config
 - `MILVUS_URL`, `MILVUS_DB_NAME`, `MILVUS_COLLECTION_NAME` — vector DB
 - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` — PostgreSQL
-- `MINIO_ENDPOINT_URL`, `MINIO_USERNAME`, `MINIO_PASSWORD` — MinIO
+- `MINIO_ENDPOINT_URL`, `MINIO_USERNAME`, `MINIO_PASSWORD`, `MINIO_BUCKET_NAME` — application MinIO (object store for source documents). This is a dedicated instance on host port 7000 and is fully separate from Milvus's internal MinIO (host-internal only, bucket `a-bucket`); the two must never share an instance or bucket.
 - `JWT_SECRET` — auth token signing

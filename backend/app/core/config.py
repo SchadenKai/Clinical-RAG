@@ -72,12 +72,15 @@ class Settings(BaseSettings):
     hf_api_key: str = os.environ.get("HUGGING_FACE_API_KEY", "")
 
     # object store
+    # NOTE: This is the APPLICATION's MinIO instance (host port 7000), which is
+    # entirely separate from Milvus's internal MinIO (host-internal only). Do not
+    # point this at Milvus's MinIO — they must never share a bucket or instance.
     minio_endpoint_url: str = os.environ.get(
-        "MINIO_ENDPOINT_URL", "http://localhost:9000"
+        "MINIO_ENDPOINT_URL", "http://localhost:7000"
     )
     minio_username: str = os.environ.get("MINIO_USERNAME", "abcd")
     minio_password: str = os.environ.get("MINIO_PASSWORD", "abcd2345")
-    minio_bucket_name: str = os.environ.get("MINO_BUCKET_NAME", "default")
+    minio_bucket_name: str = os.environ.get("MINIO_BUCKET_NAME", "default")
 
 
 settings = Settings()
