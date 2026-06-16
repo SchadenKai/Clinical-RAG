@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     # The original LangChain splitters counted characters; Docling counts tokens.
     # The value 1024 was kept as-is and may need tuning for the token-based chunker.
     chunk_size: int = 512
+    # Token overlap between adjacent chunks during synthetic-data context
+    # construction. Consumed by deepeval's ContextConstructionConfig in the SDG
+    # pipeline.
+    chunk_overlap: int = int(os.environ.get("CHUNK_OVERLAP", "64"))
     # Number of PDF pages to process per batch in Docling's pipeline.
     # Lower values reduce peak VRAM usage; raise if your GPU has headroom.
     pdf_batch_size: int = int(os.environ.get("PDF_BATCH_SIZE", "10"))
@@ -55,7 +59,6 @@ class Settings(BaseSettings):
     # llm judge config
     judge_score_threshold: float = float(os.environ.get("JUDGE_SCORE_THRESHOLD", "0.7"))
     judge_max_iterations: int = int(os.environ.get("JUDGE_MAX_ITERATIONS", "3"))
-    
 
     # reranker config
     reranker_provider: str = os.environ.get("RERANKER_PROVIDER", "slm")

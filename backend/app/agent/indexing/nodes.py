@@ -3,7 +3,6 @@ import datetime
 import json
 from zoneinfo import ZoneInfo
 
-from docling_core.transforms.chunker.doc_chunk import DocChunk
 from docling_core.types.doc.document import DoclingDocument, DocumentOrigin
 from docling_core.types.doc.labels import DocItemLabel
 from langgraph.runtime import Runtime

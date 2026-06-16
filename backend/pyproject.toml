@@ -40,7 +40,6 @@ dependencies = [
     "pytest-cov>=7.0.0",
     "pytest-mock>=3.15.1",
     "python-dotenv>=1.2.1",
-    "ragas>=0.4.3",
     "rich>=14.2.0",
     "sentence-transformers>=5.2.2",
     "spacy>=3.8.11",
