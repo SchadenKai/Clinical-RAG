@@ -4,6 +4,7 @@ import { AgentId } from '@/lib/agents-config';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { ToolCalls, ToolCallProgress } from './tool-calls';
 
 export interface ChatDocument {
   id: number;
@@ -19,6 +20,7 @@ export interface MessageProps {
   agentId?: AgentId;
   documents?: ChatDocument[];
   sources?: string[];
+  toolCalls?: ToolCallProgress[];
 }
 
 interface MessageBubbleProps {
@@ -182,6 +184,9 @@ export function MessageBubble({ message, onDocumentClick }: MessageBubbleProps) 
         <div className="prose prose-slate dark:prose-invert max-w-none text-base font-sans leading-relaxed tracking-tight break-words">
           {renderMarkdown()}
         </div>
+        {message.toolCalls && message.toolCalls.length > 0 && (
+          <ToolCalls toolCalls={message.toolCalls} className="px-0" />
+        )}
         {renderDocuments()}
       </div>
     </div>

@@ -6,6 +6,7 @@ import { useChatSession } from '@/hooks/use-chat-session';
 import { MessageBubble, ChatDocument } from './message-bubble';
 import { MessageInput } from './message-input';
 import { AgentSteps } from './agent-steps';
+import { ToolCalls } from './tool-calls';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { FileText, ExternalLink, XIcon } from 'lucide-react';
@@ -15,7 +16,7 @@ import db from '@/lib/dummy-db.json';
 export function ChatInterface() {
   const params = useParams();
   const chatId = typeof params?.id === 'string' ? params.id : undefined;
-  const { messages, isLoading, sendMessage, activeAgent, setActiveAgent, steps, streamingContent, error, documents } = useChatSession(chatId);
+  const { messages, isLoading, sendMessage, activeAgent, setActiveAgent, steps, toolCalls, streamingContent, error, documents } = useChatSession(chatId);
   const [input, setInput] = React.useState('');
   const [selectedDocument, setSelectedDocument] = React.useState<ChatDocument | null>(null);
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -39,7 +40,7 @@ export function ChatInterface() {
         scrollElement.scrollTop = scrollElement.scrollHeight;
       }
     }
-  }, [messages, isLoading, streamingContent, steps]);
+  }, [messages, isLoading, streamingContent, steps, toolCalls]);
 
   const isNewChat = messages.length === 0;
 
@@ -122,6 +123,7 @@ export function ChatInterface() {
             {isLoading && (
               <>
                 <AgentSteps steps={steps} />
+                <ToolCalls toolCalls={toolCalls} />
                 {streamingContent && (
                   <MessageBubble
                     message={{
@@ -133,7 +135,7 @@ export function ChatInterface() {
                     }}
                   />
                 )}
-                {!streamingContent && steps.length === 0 && (
+                {!streamingContent && steps.length === 0 && toolCalls.length === 0 && (
                   <div className="max-w-3xl mx-auto w-full px-1 py-4">
                     <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
                       <div className="w-2 h-2 rounded-full bg-primary/40" />

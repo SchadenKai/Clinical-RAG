@@ -6,7 +6,12 @@ export type AguiEventType =
   | 'STEP_FINISHED'
   | 'TEXT_MESSAGE_START'
   | 'TEXT_MESSAGE_CONTENT'
+  | 'TEXT_MESSAGE_CHUNK'
   | 'TEXT_MESSAGE_END'
+  | 'TOOL_CALL_START'
+  | 'TOOL_CALL_ARGS'
+  | 'TOOL_CALL_END'
+  | 'TOOL_CALL_RESULT'
   | 'STATE_SNAPSHOT'
   | 'STATE_DELTA'
   | 'CUSTOM';
@@ -56,9 +61,42 @@ export interface TextMessageContentEvent extends AguiBaseEvent {
   delta: string;
 }
 
+export interface TextMessageChunkEvent extends AguiBaseEvent {
+  type: 'TEXT_MESSAGE_CHUNK';
+  messageId?: string;
+  role?: string;
+  delta?: string;
+}
+
 export interface TextMessageEndEvent extends AguiBaseEvent {
   type: 'TEXT_MESSAGE_END';
   messageId: string;
+}
+
+export interface ToolCallStartEvent extends AguiBaseEvent {
+  type: 'TOOL_CALL_START';
+  toolCallId: string;
+  toolCallName: string;
+  parentMessageId?: string;
+}
+
+export interface ToolCallArgsEvent extends AguiBaseEvent {
+  type: 'TOOL_CALL_ARGS';
+  toolCallId: string;
+  delta: string;
+}
+
+export interface ToolCallEndEvent extends AguiBaseEvent {
+  type: 'TOOL_CALL_END';
+  toolCallId: string;
+}
+
+export interface ToolCallResultEvent extends AguiBaseEvent {
+  type: 'TOOL_CALL_RESULT';
+  messageId: string;
+  toolCallId: string;
+  content: string;
+  role?: string;
 }
 
 export interface CustomEvent extends AguiBaseEvent {
@@ -85,7 +123,12 @@ export type AguiEvent =
   | StepFinishedEvent
   | TextMessageStartEvent
   | TextMessageContentEvent
+  | TextMessageChunkEvent
   | TextMessageEndEvent
+  | ToolCallStartEvent
+  | ToolCallArgsEvent
+  | ToolCallEndEvent
+  | ToolCallResultEvent
   | StateSnapshotEvent
   | StateDeltaEvent
   | CustomEvent;

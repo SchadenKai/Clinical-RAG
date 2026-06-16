@@ -7,6 +7,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.runtime import Runtime
 from pymilvus import AnnSearchRequest, RRFRanker
 
+from app.agent.streaming import stream_chat_response
 from app.logger import app_logger
 
 from .context import AgentContext
@@ -87,7 +88,8 @@ def refusal_node(state: AgentState, runtime: Runtime[AgentContext]) -> AgentStat
             )
         ),
     ]
-    res = runtime.context.chat_model.invoke(messages)
+    # Stream so refusal text reaches the user token-by-token.
+    res = stream_chat_response(runtime.context.chat_model, messages)
     return state.model_copy(update={"final_answer": res.content})
 
 
@@ -309,7 +311,8 @@ def final_report_generation(
             )
         ),
     ]
-    result = runtime.context.chat_model.invoke(messages)
+    # Stream so the clinical report is delivered token-by-token to the client.
+    result = stream_chat_response(runtime.context.chat_model, messages)
     result = result.content
     return state.model_copy(update={"final_answer": result})
 
