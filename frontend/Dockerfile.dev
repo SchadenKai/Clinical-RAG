@@ -1,0 +1,18 @@
+# Development image for the Next.js frontend.
+# Runs the dev server with Fast Refresh; intended for use with Docker Compose
+# Watch (see deployment/docker-compose.dev.yml). Do NOT use this for production.
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Install dependencies first so this layer is cached across source edits.
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Copy the rest of the source (node_modules/.next are excluded via .dockerignore).
+COPY . .
+
+EXPOSE 3000
+
+# Bind to 0.0.0.0 so the dev server is reachable from outside the container.
+CMD ["npm", "run", "dev", "--", "-H", "0.0.0.0"]

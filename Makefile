@@ -7,6 +7,9 @@ run-backend-tests:
 run-containers:
 	cd deployment && docker compose up -d --build --force-recreate
 
+run-watch:
+	cd deployment && docker compose -f docker-compose.yml -f docker-compose.dev.yml watch
+
 run-vectors-db:
 	cd deployment && docker compose -f docker-compose.milvus.yml up -d
 

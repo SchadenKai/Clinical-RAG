@@ -1,0 +1,88 @@
+# Local development override — enables Docker Compose Watch hot reloading.
+#
+# This file is deliberately NOT named `docker-compose.override.yml`, so it is
+# NOT auto-loaded. Bare `docker compose up` therefore runs the base file only
+# (production-grade). Opt into dev hot reloading by layering this file and using
+# `watch`:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml watch
+#   # or simply: make run-watch
+#
+# Production stays clean:
+#   docker compose up -d        # base only — no DEV_MODE, no --reload
+#   # == make run-containers
+#
+# Only `api_server` (backend) and `frontend` get hot reloading. All other
+# services run normally. Editing backend/app/** or frontend/src/** syncs into
+# the running container; editing dependency manifests rebuilds the image.
+
+services:
+  # Backend — FastAPI/uvicorn with --reload. The production Dockerfile installs
+  # the app package at /app (see backend/Dockerfile), so we sync source there
+  # and point uvicorn's reloader at it. uvicorn[standard]'s watchfiles backend
+  # ignores .venv/ by default, so the bundled virtualenv under /app is skipped.
+  api_server:
+    container_name: api_server
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app
+    env_file:
+      - ../.env
+    environment:
+      # Skip the expensive external-service smoke tests on startup so the
+      # backend boots fast for local iteration (see app/main.py lifespan).
+      - DEV_MODE=true
+      # In-network service hostnames (override any localhost values from .env).
+      - MILVUS_URL=http://standalone:19530
+      - MINIO_ENDPOINT_URL=http://minio_local:9000
+    ports:
+      - 8000:8000
+    depends_on:
+      standalone:
+        condition: service_healthy
+    develop:
+      watch:
+        # Edits to Python source sync straight into the container; uvicorn reloads.
+        - action: sync
+          path: ../backend/app
+          target: /app
+        # Dependency changes require a fresh image build.
+        - action: rebuild
+          path: ../backend/pyproject.toml
+        - action: rebuild
+          path: ../backend/uv.lock
+
+  # Frontend — Next.js dev server with Fast Refresh. Uses a dev-only Dockerfile
+  # (frontend/Dockerfile.dev) that runs `next dev` instead of a production build.
+  frontend:
+    container_name: frontend
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    ports:
+      - 3000:3000
+    depends_on:
+      - api_server
+    develop:
+      watch:
+        # Source and asset edits sync in; Next.js Fast Refresh picks them up.
+        - action: sync
+          path: ../frontend/src
+          target: /app/src
+        - action: sync
+          path: ../frontend/public
+          target: /app/public
+        # Config changes need a dev-server restart to take effect.
+        - action: sync+restart
+          path: ../frontend/next.config.ts
+          target: /app/next.config.ts
+        # Dependency changes require a fresh image build.
+        - action: rebuild
+          path: ../frontend/package.json
+        - action: rebuild
+          path: ../frontend/package-lock.json
