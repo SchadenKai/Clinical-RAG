@@ -1,5 +1,6 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Annotated
 
 import torch
@@ -17,8 +18,31 @@ from app.routes.dependencies.vector_db import (
 from app.routes.v1.main import v1_router
 
 
+def _run_migrations() -> None:
+    """Apply Alembic migrations up to head.
+
+    Best-effort: a database hiccup should not prevent the rest of the service
+    (RAG, vector search) from booting. The agent endpoints surface a clear error
+    if the schema is missing, and ``make migrate`` is the manual fallback.
+    """
+    from alembic.config import Config
+
+    from alembic import command
+
+    backend_root = Path(__file__).resolve().parent.parent
+    cfg = Config(str(backend_root / "alembic.ini"))
+    cfg.set_main_option("script_location", str(backend_root / "alembic"))
+    command.upgrade(cfg, "head")
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncGenerator:
+    app_logger.info("Applying database migrations")
+    try:
+        _run_migrations()
+    except Exception as exc:  # noqa: BLE001 - log and continue booting
+        app_logger.error(f"Database migrations failed: {exc}")
+
     app_logger.info("Initializing vector database")
     settings = get_app_settings()
     vector_db = get_vector_client_manual(settings)

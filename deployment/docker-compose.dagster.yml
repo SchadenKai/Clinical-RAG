@@ -1,0 +1,58 @@
+# Dagster orchestration for the RAG batch pipelines (indexing / SDG / eval).
+#
+# Layered on top of the base stack, which provides Postgres, the application
+# MinIO, and — via its `include:` — Milvus. The pipelines need all three at
+# materialization time, so this file is meant to be combined with the base:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dagster.yml up -d --build
+#   # or simply: make run-dagster
+#
+# The Dagster UI is published on http://localhost:3333 (host 3333 -> container
+# 3000, so it does not clash with the frontend on :3000).
+#
+# This runs `dagster dev` (webserver + daemon in one process) against the
+# `app.orchestration.definitions` code location baked into the backend image.
+# Run history is stored in SQLite under DAGSTER_HOME and is EPHEMERAL (lost on
+# `compose down`). For persistent, production-grade storage, point DAGSTER_HOME's
+# dagster.yaml at the `postgres` service instead (use a dedicated `dagster`
+# database) and run `dagster-webserver` + `dagster-daemon` as separate services.
+
+services:
+  dagster:
+    container_name: dagster
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    # Reuse the appuser image (Playwright browsers used by the indexing pipeline
+    # are installed under appuser's home). DAGSTER_HOME lives under /app, which
+    # the image chowns to appuser, so it is writable without running as root.
+    command:
+      - sh
+      - -c
+      - |
+        mkdir -p "$$DAGSTER_HOME"
+        printf 'telemetry:\n  enabled: false\n' > "$$DAGSTER_HOME/dagster.yaml"
+        exec dagster dev \
+          --module-name app.orchestration.definitions \
+          --host 0.0.0.0 \
+          --port 3000
+    env_file:
+      - ../.env
+    environment:
+      - DAGSTER_HOME=/app/dagster_home
+      # Skip the backend's external-service smoke tests where applicable.
+      - DEV_MODE=true
+      # In-network service hostnames (override any localhost values from .env).
+      - MILVUS_URL=http://standalone:19530
+      - MINIO_ENDPOINT_URL=http://minio_local:9000
+      - POSTGRES_HOST=postgres
+    ports:
+      - "3333:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio_local:
+        condition: service_healthy
+      standalone:
+        condition: service_healthy

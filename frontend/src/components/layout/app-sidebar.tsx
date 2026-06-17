@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Plus, MessageSquare, Menu } from 'lucide-react';
+import { Plus, MessageSquare, Menu, Bot } from 'lucide-react';
 
 import {
   Sidebar,
@@ -17,12 +17,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import db from '@/lib/dummy-db.json';
 
 export function AppSidebar() {
   const { toggleSidebar } = useSidebar();
   const params = useParams();
+  const pathname = usePathname();
   const chatId = typeof params?.id === 'string' ? params.id : undefined;
   const chats = db.chatHistory;
 
@@ -47,6 +48,18 @@ export function AppSidebar() {
               </Link>
             </Button>
           </div>
+          <SidebarGroupContent className="px-2">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === '/agents'}>
+                  <Link href="/agents" className="transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                    <Bot className="mr-2 h-4 w-4 shrink-0 opacity-70" />
+                    <span>Chat Agents</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>

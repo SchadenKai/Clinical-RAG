@@ -85,5 +85,26 @@ class Settings(BaseSettings):
     minio_password: str = os.environ.get("MINIO_PASSWORD", "abcd2345")
     minio_bucket_name: str = os.environ.get("MINIO_BUCKET_NAME", "default")
 
+    # relational database (Postgres) — stores chat agent definitions.
+    # Defaults mirror deployment/docker-compose.yml's postgres service. Inside the
+    # Docker network set POSTGRES_HOST=postgres; locally it resolves to localhost.
+    postgres_user: str = os.environ.get("POSTGRES_USER", "postgres")
+    postgres_password: str = os.environ.get("POSTGRES_PASSWORD", "password")
+    postgres_db: str = os.environ.get("POSTGRES_DB", "postgres")
+    postgres_host: str = os.environ.get("POSTGRES_HOST", "localhost")
+    postgres_port: int = int(os.environ.get("POSTGRES_PORT", "5432"))
+    # Optional explicit override (e.g. a managed DB URL). When set it wins over the
+    # individual POSTGRES_* parts.
+    database_url: Optional[str] = os.environ.get("DATABASE_URL") or None
+
+    @property
+    def sqlalchemy_database_url(self) -> str:
+        if self.database_url:
+            return self.database_url
+        return (
+            f"postgresql+psycopg://{self.postgres_user}:{self.postgres_password}"
+            f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+        )
+
 
 settings = Settings()

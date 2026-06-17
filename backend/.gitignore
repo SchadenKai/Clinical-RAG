@@ -217,3 +217,8 @@ __marimo__/
 
 # DeepEval
 .deepeval
+
+# Dagster
+.tmp_dagster_home_*/
+dagster_home/
+.dagster/

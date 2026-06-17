@@ -17,11 +17,21 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # stage 2: runner
 FROM python:3.13.11-slim-bookworm AS runner
 
+WORKDIR /app
+
 COPY --from=builder /app/.venv /app/.venv
 
-ENV PATH="/app/.venv/bin:$PATH"
+ENV PATH="/app/.venv/bin:$PATH" \
+    DEEPEVAL_TELEMETRY_OPT_OUT=YES \
+    DEEPEVAL_UPDATE_WARNING_OPT_IN=NO \
+    ERROR_REPORTING=NO
 
 COPY app ./app
+
+# Alembic config + migrations are applied at startup (see app/main.py lifespan)
+# and via `make migrate`, so they must be present in the runtime image.
+COPY alembic.ini ./alembic.ini
+COPY alembic ./alembic
 
 RUN apt-get update && \
     apt-get install -y curl &&\

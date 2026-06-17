@@ -37,10 +37,13 @@ services:
       # In-network service hostnames (override any localhost values from .env).
       - MILVUS_URL=http://standalone:19530
       - MINIO_ENDPOINT_URL=http://minio_local:9000
+      - POSTGRES_HOST=postgres
     ports:
       - 8000:8000
     depends_on:
       standalone:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     develop:
       watch:

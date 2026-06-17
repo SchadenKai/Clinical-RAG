@@ -5,7 +5,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { AGENTS, AgentId } from '@/lib/agents-config';
+import { AgentId, getAgentVisual } from '@/lib/agents-config';
+import { useAgents } from '@/hooks/use-agents';
 import { cn } from '@/lib/utils';
 import { ChevronDown } from 'lucide-react';
 
@@ -16,8 +17,13 @@ interface AgentSelectorProps {
 }
 
 export function AgentSelector({ value, onChange, className }: AgentSelectorProps) {
-  const activeAgent = AGENTS[value];
-  const ActiveIcon = activeAgent?.icon;
+  const { data: agents, isLoading } = useAgents();
+
+  const activeAgent = agents?.find((agent) => agent.id === value);
+  const activeVisual = getAgentVisual(value);
+  const ActiveIcon = activeVisual.icon;
+
+  const triggerLabel = activeAgent?.name ?? (isLoading ? 'Loading agents…' : 'Select an agent');
 
   return (
     <DropdownMenu>
@@ -28,28 +34,37 @@ export function AgentSelector({ value, onChange, className }: AgentSelectorProps
         )}
       >
         <div className="flex items-center gap-2 truncate">
-          {ActiveIcon && <ActiveIcon className={cn('h-4 w-4 shrink-0', activeAgent.themeColor)} />}
-          <span className="truncate">{activeAgent?.name || 'Select an agent'}</span>
+          <ActiveIcon className={cn('h-4 w-4 shrink-0', activeVisual.themeColor)} />
+          <span className="truncate">{triggerLabel}</span>
         </div>
         <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-[300px] rounded-xl shadow-md border-border/50 bg-background/95 backdrop-blur-sm z-[100]">
-        {Object.values(AGENTS).map((agent) => {
-          const Icon = agent.icon;
-          return (
-            <DropdownMenuItem 
-              key={agent.id} 
-              onClick={() => onChange(agent.id)}
-              className="cursor-pointer gap-3 p-3 items-start my-1 focus:bg-accent rounded-lg transition-colors"
-            >
-              <Icon className={cn('h-5 w-5 mt-0.5 shrink-0', agent.themeColor)} />
-              <div className="flex flex-col gap-1">
-                <span className="font-medium text-sm leading-none">{agent.name}</span>
-                <span className="text-xs text-muted-foreground leading-snug">{agent.description}</span>
-              </div>
-            </DropdownMenuItem>
-          );
-        })}
+        {!agents || agents.length === 0 ? (
+          <div className="px-3 py-4 text-sm text-muted-foreground">
+            {isLoading ? 'Loading agents…' : 'No agents available'}
+          </div>
+        ) : (
+          agents.map((agent) => {
+            const visual = getAgentVisual(agent.id);
+            const Icon = visual.icon;
+            return (
+              <DropdownMenuItem
+                key={agent.id}
+                onClick={() => onChange(agent.id)}
+                className="cursor-pointer gap-3 p-3 items-start my-1 focus:bg-accent rounded-lg transition-colors"
+              >
+                <Icon className={cn('h-5 w-5 mt-0.5 shrink-0', visual.themeColor)} />
+                <div className="flex flex-col gap-1">
+                  <span className="font-medium text-sm leading-none">{agent.name}</span>
+                  {agent.description && (
+                    <span className="text-xs text-muted-foreground leading-snug">{agent.description}</span>
+                  )}
+                </div>
+              </DropdownMenuItem>
+            );
+          })
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -3,7 +3,7 @@ import { API_ENDPOINTS } from './constants';
 
 export interface StreamChatParams {
   query: string;
-  agentId: 'general' | 'clinical_rag';
+  agentId: string;
   systemPrompt?: string;
   isLlmEnabled?: boolean;
 }

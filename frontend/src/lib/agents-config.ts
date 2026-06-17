@@ -1,33 +1,24 @@
-import { Brain, Stethoscope, LucideIcon } from 'lucide-react';
+import { Brain, Stethoscope, Bot, LucideIcon } from 'lucide-react';
 
-export type AgentId = 'general' | 'clinical_rag';
+/**
+ * Agents are now created and managed at runtime (see `agents-api.ts`), so an
+ * agent id is any string. The two seeded built-ins keep bespoke visuals; every
+ * other agent falls back to a generic look.
+ */
+export type AgentId = string;
 
-export interface AgentConfig {
-  id: AgentId;
-  name: string;
-  description: string;
+export interface AgentVisual {
   icon: LucideIcon;
-  systemPrompt?: string;
-  themeColor: string; // Tailwind class
+  themeColor: string; // Tailwind text-color class
 }
 
-export const AGENTS: Record<AgentId, AgentConfig> = {
-  general: {
-    id: 'general',
-    name: 'General Chat',
-    description: 'Versatile AI assistant for everyday tasks and general queries.',
-    icon: Brain,
-    themeColor: 'text-indigo-500',
-  },
-  clinical_rag: {
-    id: 'clinical_rag',
-    name: 'Clinical Guidelines Agent',
-    description: 'Specialized healthcare assistant grounded in CDC and WHO guidelines.',
-    icon: Stethoscope,
-    themeColor: 'text-emerald-500',
-  },
+const KNOWN_VISUALS: Record<string, AgentVisual> = {
+  general: { icon: Brain, themeColor: 'text-indigo-500' },
+  clinical_rag: { icon: Stethoscope, themeColor: 'text-emerald-500' },
 };
 
-export function getAgentConfig(id: AgentId): AgentConfig {
-  return AGENTS[id] || AGENTS.general;
+const DEFAULT_VISUAL: AgentVisual = { icon: Bot, themeColor: 'text-sky-500' };
+
+export function getAgentVisual(id: string): AgentVisual {
+  return KNOWN_VISUALS[id] ?? DEFAULT_VISUAL;
 }
